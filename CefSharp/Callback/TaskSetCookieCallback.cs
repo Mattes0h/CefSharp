@@ -13,7 +13,7 @@ namespace CefSharp
     /// </summary>
     public class TaskSetCookieCallback : ISetCookieCallback
     {
-        private readonly TaskCompletionSource<bool> taskCompletionSource;
+        private readonly AsyncTaskCompletionSource<bool> taskCompletionSource;
         private volatile bool isDisposed;
         private bool onComplete; //Only ever accessed on the same CEF thread, so no need for thread safety
 
@@ -22,7 +22,7 @@ namespace CefSharp
         /// </summary>
         public TaskSetCookieCallback()
         {
-            taskCompletionSource = new TaskCompletionSource<bool>();
+            taskCompletionSource = new AsyncTaskCompletionSource<bool>();
         }
 
         void ISetCookieCallback.OnComplete(bool success)

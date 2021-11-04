@@ -14,7 +14,7 @@ namespace CefSharp
     /// </summary>
     public class TaskWebPluginInfoVisitor : IWebPluginInfoVisitor
     {
-        private TaskCompletionSource<List<WebPluginInfo>> taskCompletionSource;
+        private AsyncTaskCompletionSource<List<WebPluginInfo>> taskCompletionSource;
         private List<WebPluginInfo> list;
 
         /// <summary>
@@ -22,7 +22,7 @@ namespace CefSharp
         /// </summary>
         public TaskWebPluginInfoVisitor()
         {
-            taskCompletionSource = new TaskCompletionSource<List<WebPluginInfo>>();
+            taskCompletionSource = new AsyncTaskCompletionSource<List<WebPluginInfo>>();
             list = new List<WebPluginInfo>();
         }
 

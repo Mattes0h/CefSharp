@@ -18,7 +18,7 @@ namespace CefSharp
         /// </summary>
         public const int InvalidNoOfCookiesDeleted = -1;
 
-        private readonly TaskCompletionSource<int> taskCompletionSource;
+        private readonly AsyncTaskCompletionSource<int> taskCompletionSource;
         private volatile bool isDisposed;
         private bool onComplete; //Only ever accessed on the same CEF thread, so no need for thread safety
 
@@ -27,7 +27,7 @@ namespace CefSharp
         /// </summary>
         public TaskDeleteCookiesCallback()
         {
-            taskCompletionSource = new TaskCompletionSource<int>();
+            taskCompletionSource = new AsyncTaskCompletionSource<int>();
         }
 
         void IDeleteCookiesCallback.OnComplete(int numDeleted)
