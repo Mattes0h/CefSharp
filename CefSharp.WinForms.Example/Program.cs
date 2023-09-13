@@ -17,12 +17,11 @@ namespace CefSharp.WinForms.Example
         [STAThread]
         public static int Main(string[] args)
         {
+            // DEMO: Change to true to self host the BrowserSubprocess.
+            // instead of using CefSharp.BrowserSubprocess.exe, your applications exe will be used.
+            // In this case CefSharp.WinForms.Example.exe
             const bool selfHostSubProcess = false;
 
-            Cef.EnableHighDPISupport();
-
-            //NOTE: Using a simple sub processes uses your existing application executable to spawn instances of the sub process.
-            //Features like JSB, EvaluateScriptAsync, custom schemes require the CefSharp.BrowserSubprocess to function
             if (selfHostSubProcess)
             {
                 var exitCode = CefSharp.BrowserSubprocess.SelfHost.Main(args);
@@ -45,6 +44,7 @@ namespace CefSharp.WinForms.Example
 
                 Cef.Initialize(settings);
 
+                Application.EnableVisualStyles();
                 var browser = new SimpleBrowserForm();
                 Application.Run(browser);
             }
@@ -58,13 +58,16 @@ namespace CefSharp.WinForms.Example
                 }
 #endif
 
-                //When multiThreadedMessageLoop = true then externalMessagePump must be set to false
-                // To enable externalMessagePump set  multiThreadedMessageLoop = false and externalMessagePump = true
+                // DEMO: To integrate CEF into your applications existing message loop 
+                // set multiThreadedMessageLoop = false;
                 const bool multiThreadedMessageLoop = true;
+                // When multiThreadedMessageLoop = true then externalMessagePump must be set to false
+                // To enable externalMessagePump set  multiThreadedMessageLoop = false and externalMessagePump = true
                 const bool externalMessagePump = false;
 
+                //TEST: There are a number of different Forms for testing purposes.
                 var browser = new BrowserForm(multiThreadedMessageLoop);
-                //var browser = new SimpleBrowserForm(multiThreadedMessageLoop);
+                //var browser = new SimpleBrowserForm();
                 //var browser = new TabulationDemoForm();
 
                 IBrowserProcessHandler browserProcessHandler;
@@ -95,6 +98,7 @@ namespace CefSharp.WinForms.Example
 
                 CefExample.Init(settings, browserProcessHandler: browserProcessHandler);
 
+                Application.EnableVisualStyles();
                 //Application.Run(new MultiFormAppContext());
                 Application.Run(browser);
             }

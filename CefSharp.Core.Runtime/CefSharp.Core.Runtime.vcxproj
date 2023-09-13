@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\cef.sdk.95.7.10\build\cef.sdk.props" Condition="Exists('..\packages\cef.sdk.95.7.10\build\cef.sdk.props')" />
+  <Import Project="..\packages\cef.sdk.115.3.7\build\cef.sdk.props" Condition="Exists('..\packages\cef.sdk.115.3.7\build\cef.sdk.props')" />
   <Import Project="..\packages\Microsoft.SourceLink.GitHub.1.0.0\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\packages\Microsoft.SourceLink.GitHub.1.0.0\build\Microsoft.SourceLink.GitHub.props')" />
   <Import Project="..\packages\Microsoft.SourceLink.Common.1.0.0\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\packages\Microsoft.SourceLink.Common.1.0.0\build\Microsoft.SourceLink.Common.props')" />
   <Import Project="..\packages\Microsoft.Build.Tasks.Git.1.0.0\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('..\packages\Microsoft.Build.Tasks.Git.1.0.0\build\Microsoft.Build.Tasks.Git.props')" />
@@ -26,7 +26,7 @@
     <ProjectGuid>{7B495581-2271-4F41-9476-ACB86E8C864F}</ProjectGuid>
     <RootNamespace>CefSharp</RootNamespace>
     <Keyword>ManagedCProj</Keyword>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <Import Project="..\CefSharp.props" />
@@ -267,6 +267,8 @@
     <ClInclude Include="Cef.h" />
     <ClInclude Include="DragData.h" />
     <ClInclude Include="Internals\CefDevToolsMessageObserverAdapter.h" />
+    <ClInclude Include="Internals\CefMediaAccessCallbackWrapper.h" />
+    <ClInclude Include="Internals\CefPermissionPromptCallbackWrapper.h" />
     <ClInclude Include="Internals\CefRefCountManaged.h" />
     <ClInclude Include="Internals\CefRegistrationWrapper.h" />
     <ClInclude Include="Internals\CefResourceReadCallbackWrapper.h" />
@@ -278,6 +280,7 @@
     <ClInclude Include="Internals\CefResourceSkipCallbackWrapper.h" />
     <ClInclude Include="Internals\CefRunFileDialogCallbackAdapter.h" />
     <ClInclude Include="Internals\CefSchemeRegistrarWrapper.h" />
+    <ClInclude Include="Internals\CefTaskDelegate.h" />
     <ClInclude Include="Internals\CefUrlRequestClientAdapter.h" />
     <ClInclude Include="Internals\CefValueWrapper.h" />
     <ClInclude Include="Internals\CefWriteHandlerWrapper.h" />
@@ -323,7 +326,6 @@
     <ClInclude Include="Internals\JavascriptCallbackFactory.h" />
     <ClInclude Include="Internals\MCefRefPtr.h" />
     <ClInclude Include="Internals\Messaging\Messages.h" />
-    <ClInclude Include="Internals\CefWebPluginInfoVisitorAdapter.h" />
     <ClInclude Include="Internals\RenderClientAdapter.h" />
     <ClInclude Include="Internals\ReportUnhandledExceptions.h" />
     <ClInclude Include="Internals\CefRequestCallbackWrapper.h" />

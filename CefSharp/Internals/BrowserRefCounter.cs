@@ -2,6 +2,8 @@
 //
 // Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 // 
+using System;
+using System.Text;
 using System.Threading;
 
 namespace CefSharp.Internals
@@ -16,33 +18,53 @@ namespace CefSharp.Internals
     /// doesn't reset the internal <see cref="ManualResetEventSlim"/> when Count is aleady 0.
     /// In our case it's valid to increase the number of browsers and reset the event.
     /// </remarks>
-    public class BrowserRefCounter : IBrowserRefCounter
+    public sealed class BrowserRefCounter : IBrowserRefCounter
     {
         private volatile int count = 0;
         private ManualResetEventSlim manualResetEvent = new ManualResetEventSlim();
+        private bool loggingEnabled = false;
+        private StringBuilder logger = new StringBuilder();
 
         /// TODO: Refactor this so it's not static.
         public static IBrowserRefCounter Instance = new NoOpBrowserRefCounter();
 
         /// <summary>
-        /// Increment browser count
+        /// If logging is enabled the <paramref name="line"/> will be appended to
+        /// the internal log.
         /// </summary>
-        void IBrowserRefCounter.Increment()
+        /// <param name="line">text to append to log if logging enabled.</param>
+        public void AppendLineToLog(string line)
+        {
+            if(loggingEnabled)
+            {
+                logger.AppendLine(line);
+            }
+        }
+
+        /// <inheritdoc/>
+        void IBrowserRefCounter.Increment(Type type)
         {
             var newCount = Interlocked.Increment(ref count);
 
             if (newCount > 0)
             {
                 manualResetEvent.Reset();
+
+                AppendLineToLog($"{type} - Incremented (ManualResetEvent was reset)");
+            }
+            else if(loggingEnabled)
+            {
+                logger.AppendLine($"New Count <= 0 - {newCount} ");
             }
         }
 
-        /// <summary>
-        /// Decrement browser count
-        /// </summary>
-        bool IBrowserRefCounter.Decrement()
+        /// <inheritdoc/>
+        bool IBrowserRefCounter.Decrement(Type type)
         {
             var newCount = Interlocked.Decrement(ref count);
+
+            AppendLineToLog($"{type} - Decremented (Current Count {newCount})");
+
             if (newCount == 0)
             {
                 manualResetEvent.Set();
@@ -51,6 +73,8 @@ namespace CefSharp.Internals
 
             if (newCount < 0)
             {
+                AppendLineToLog($"{type} - Decremented (Less than 0 : Current Count {newCount})");
+
                 //If we went below 0 then reset to 0
                 // TODO: something went wrong with our tracking
                 Interlocked.Exchange(ref count, 0);
@@ -61,12 +85,7 @@ namespace CefSharp.Internals
             return false;
         }
 
-        /// <summary>
-        /// Gets the number of CefBrowser instances currently open (this includes popups)
-        /// </summary>
-        /// <value>
-        /// The count.
-        /// </value>
+        /// <inheritdoc/>
         int IBrowserRefCounter.Count
         {
             get
@@ -76,29 +95,47 @@ namespace CefSharp.Internals
             }
         }
 
-        /// <summary>
-        /// Blocks until the CefBrowser count has reached 0 or the timeout has been reached
-        /// </summary>
-        /// <param name="timeoutInMiliseconds">(Optional) The timeout in miliseconds.</param>
+        /// <inheritdoc/>
         void IBrowserRefCounter.WaitForBrowsersToClose(int timeoutInMiliseconds)
         {
+            AppendLineToLog($"WaitForBrowsersToClose - Current Count {count}");
+
             if (!manualResetEvent.IsSet)
             {
                 manualResetEvent.Wait(timeoutInMiliseconds);
             }
+
+            AppendLineToLog($"WaitForBrowsersToClose - Updated Count {count}");
         }
 
-        /// <summary>
-        /// Blocks until the CefBrowser count has reached 0 or the timeout has been reached
-        /// </summary>
-        /// <param name="timeoutInMiliseconds">(Optional) The timeout in miliseconds.</param>
-        /// <param name="cancellationToken">(Optional) The cancellation token.</param>
+        /// <inheritdoc/>
         void IBrowserRefCounter.WaitForBrowsersToClose(int timeoutInMiliseconds, CancellationToken cancellationToken)
         {
+            AppendLineToLog($"WaitForBrowsersToClose - Current Count {count}");
+
             if (!manualResetEvent.IsSet)
             {
                 manualResetEvent.Wait(timeoutInMiliseconds, cancellationToken);
             }
+
+            AppendLineToLog($"WaitForBrowsersToClose - Updated Count {count}");
+        }
+
+        /// <inheritdoc/>
+        void IBrowserRefCounter.EnableLogging()
+        {
+            loggingEnabled = true;
+        }
+
+        /// <inheritdoc/>
+        string IBrowserRefCounter.GetLog()
+        {
+            return logger.ToString();
+        }
+
+        public void Dispose()
+        {
+            manualResetEvent.Dispose();
         }
     }
 }

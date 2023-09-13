@@ -87,20 +87,21 @@ void CefBrowserHostWrapper::PrintToPdf(String^ path, PdfPrintSettings^ settings,
     CefPdfPrintSettings nativeSettings;
     if (settings != nullptr)
     {
-        StringUtils::AssignNativeFromClr(nativeSettings.header_footer_title, settings->HeaderFooterTitle);
-        StringUtils::AssignNativeFromClr(nativeSettings.header_footer_url, settings->HeaderFooterUrl);
-        nativeSettings.backgrounds_enabled = settings->BackgroundsEnabled ? 1 : 0;
-        nativeSettings.header_footer_enabled = settings->HeaderFooterEnabled ? 1 : 0;
         nativeSettings.landscape = settings->Landscape ? 1 : 0;
-        nativeSettings.selection_only = settings->SelectionOnly ? 1 : 0;
+        nativeSettings.print_background = settings->PrintBackground ? 1 : 0;
+        nativeSettings.scale = settings->Scale;
+        nativeSettings.paper_height = settings->PaperHeight;
+        nativeSettings.paper_width = settings->PaperWidth;
+        nativeSettings.prefer_css_page_size = settings->PreferCssPageSize ? 1 : 0;
+        nativeSettings.margin_type = static_cast<cef_pdf_print_margin_type_t>(settings->MarginType);
         nativeSettings.margin_bottom = settings->MarginBottom;
         nativeSettings.margin_top = settings->MarginTop;
         nativeSettings.margin_left = settings->MarginLeft;
         nativeSettings.margin_right = settings->MarginRight;
-        nativeSettings.scale_factor = settings->ScaleFactor;
-        nativeSettings.page_height = settings->PageHeight;
-        nativeSettings.page_width = settings->PageWidth;
-        nativeSettings.margin_type = static_cast<cef_pdf_print_margin_type_t>(settings->MarginType);
+        StringUtils::AssignNativeFromClr(nativeSettings.page_ranges, settings->PageRanges);
+        nativeSettings.display_header_footer = settings->DisplayHeaderFooter ? 1 : 0;
+        StringUtils::AssignNativeFromClr(nativeSettings.header_template, settings->HeaderTemplate);
+        StringUtils::AssignNativeFromClr(nativeSettings.footer_template, settings->FooterTemplate);
     }
 
     _browserHost->PrintToPDF(StringUtils::ToNative(path), nativeSettings, new CefPdfPrintCallbackWrapper(callback));
@@ -133,10 +134,7 @@ Task<double>^ CefBrowserHostWrapper::GetZoomLevelAsync()
 
     if (CefCurrentlyOn(TID_UI))
     {
-        auto taskSource = gcnew TaskCompletionSource<double>();
-
-        CefSharp::Internals::TaskExtensions::TrySetResultAsync<double>(taskSource, GetZoomLevelOnUI());
-        return taskSource->Task;
+        return Task::FromResult(GetZoomLevelOnUI());
     }
     return Cef::UIThreadTaskFactory->StartNew(gcnew Func<double>(this, &CefBrowserHostWrapper::GetZoomLevelOnUI));
 }
@@ -303,7 +301,7 @@ IExtension^ CefBrowserHostWrapper::Extension::get()
     return nullptr;
 }
 
-void CefBrowserHostWrapper::RunFileDialog(CefFileDialogMode mode, String^ title, String^ defaultFilePath, IList<String^>^ acceptFilters, int selectedAcceptFilter, IRunFileDialogCallback^ callback)
+void CefBrowserHostWrapper::RunFileDialog(CefFileDialogMode mode, String^ title, String^ defaultFilePath, IList<String^>^ acceptFilters, IRunFileDialogCallback^ callback)
 {
     ThrowIfDisposed();
 
@@ -311,15 +309,14 @@ void CefBrowserHostWrapper::RunFileDialog(CefFileDialogMode mode, String^ title,
         StringUtils::ToNative(title),
         StringUtils::ToNative(defaultFilePath),
         StringUtils::ToNative(acceptFilters),
-        selectedAcceptFilter,
         new CefRunFileDialogCallbackAdapter(callback));
 }
 
-void CefBrowserHostWrapper::Find(int identifier, String^ searchText, bool forward, bool matchCase, bool findNext)
+void CefBrowserHostWrapper::Find(String^ searchText, bool forward, bool matchCase, bool findNext)
 {
     ThrowIfDisposed();
 
-    _browserHost->Find(identifier, StringUtils::ToNative(searchText), forward, matchCase, findNext);
+    _browserHost->Find(StringUtils::ToNative(searchText), forward, matchCase, findNext);
 }
 
 void CefBrowserHostWrapper::StopFinding(bool clearSelection)
@@ -350,7 +347,7 @@ void CefBrowserHostWrapper::SendKeyEvent(KeyEvent keyEvent)
     CefKeyEvent nativeKeyEvent;
     nativeKeyEvent.focus_on_editable_field = keyEvent.FocusOnEditableField == 1;
     nativeKeyEvent.is_system_key = keyEvent.IsSystemKey == 1;
-    nativeKeyEvent.modifiers = (uint32)keyEvent.Modifiers;
+    nativeKeyEvent.modifiers = (uint32_t)keyEvent.Modifiers;
     nativeKeyEvent.type = (cef_key_event_type_t)keyEvent.Type;
     nativeKeyEvent.native_key_code = keyEvent.NativeKeyCode;
     nativeKeyEvent.windows_key_code = keyEvent.WindowsKeyCode;
@@ -436,7 +433,7 @@ void CefBrowserHostWrapper::SendMouseWheelEvent(MouseEvent mouseEvent, int delta
         CefMouseEvent m;
         m.x = mouseEvent.X;
         m.y = mouseEvent.Y;
-        m.modifiers = (uint32)mouseEvent.Modifiers;
+        m.modifiers = (uint32_t)mouseEvent.Modifiers;
 
         _browserHost->SendMouseWheelEvent(m, deltaX, deltaY);
     }
@@ -450,7 +447,7 @@ void CefBrowserHostWrapper::SendTouchEvent(TouchEvent evt)
     {
         CefTouchEvent e;
         e.id = evt.Id;
-        e.modifiers = (uint32)evt.Modifiers;
+        e.modifiers = (uint32_t)evt.Modifiers;
         e.pointer_type = (cef_pointer_type_t)evt.PointerType;
         e.pressure = evt.Pressure;
         e.radius_x = evt.RadiusX;
@@ -562,7 +559,7 @@ void CefBrowserHostWrapper::SendMouseClickEvent(MouseEvent mouseEvent, MouseButt
     CefMouseEvent m;
     m.x = mouseEvent.X;
     m.y = mouseEvent.Y;
-    m.modifiers = (uint32)mouseEvent.Modifiers;
+    m.modifiers = (uint32_t)mouseEvent.Modifiers;
 
     _browserHost->SendMouseClickEvent(m, (CefBrowserHost::MouseButtonType) mouseButtonType, mouseUp, clickCount);
 }
@@ -574,7 +571,7 @@ void CefBrowserHostWrapper::SendMouseMoveEvent(MouseEvent mouseEvent, bool mouse
     CefMouseEvent m;
     m.x = mouseEvent.X;
     m.y = mouseEvent.Y;
-    m.modifiers = (uint32)mouseEvent.Modifiers;
+    m.modifiers = (uint32_t)mouseEvent.Modifiers;
 
     _browserHost->SendMouseMoveEvent(m, mouseLeave);
 }
@@ -698,7 +695,7 @@ CefMouseEvent CefBrowserHostWrapper::GetCefMouseEvent(MouseEvent mouseEvent)
     CefMouseEvent cefMouseEvent;
     cefMouseEvent.x = mouseEvent.X;
     cefMouseEvent.y = mouseEvent.Y;
-    cefMouseEvent.modifiers = (uint32)mouseEvent.Modifiers;
+    cefMouseEvent.modifiers = (uint32_t)mouseEvent.Modifiers;
     return cefMouseEvent;
 }
 

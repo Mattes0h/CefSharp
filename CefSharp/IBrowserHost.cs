@@ -58,12 +58,12 @@ namespace CefSharp
         bool HasDevTools { get; }
 
         /// <summary>
-        /// Send a method call message over the DevTools protocol. <paramref name="message"/> must be a
+        /// Send a method call message over the DevTools protocol. <paramref name="messageAsJson"/> must be a
         /// UTF8-encoded JSON dictionary that contains "id" (int), "method" (string)
         /// and "params" (dictionary, optional) values. See the DevTools protocol
         /// documentation at https://chromedevtools.github.io/devtools-protocol/ for
         /// details of supported methods and the expected "params" dictionary contents.
-        /// <paramref name="message"/> will be copied if necessary. This method will return true if
+        /// <paramref name="messageAsJson"/> will be copied if necessary. This method will return true if
         /// called on the CEF UI thread and the message was successfully submitted for
         /// validation, otherwise false. Validation will be applied asynchronously and
         /// any messages that fail due to formatting errors or missing parameters may
@@ -115,7 +115,7 @@ namespace CefSharp
         /// Execute a method call over the DevTools protocol. This is a more structured
         /// version of SendDevToolsMessage.
         /// See the DevTools protocol documentation at https://chromedevtools.github.io/devtools-protocol/ for details
-        /// of supported methods and the expected <paramref name="paramsAsJson"/> dictionary contents.
+        /// of supported methods and the expected <paramref name="parameters"/> dictionary contents.
         /// See the SendDevToolsMessage documentation for additional usage information.
         /// </summary>
         /// <param name="messageId">is an incremental number that uniquely identifies the message (pass 0 to have the next number assigned
@@ -189,16 +189,12 @@ namespace CefSharp
         /// <summary>
         /// Search for <paramref name="searchText"/>.
         /// </summary>
-        /// <param name="identifier">must be a unique ID and these IDs
-        /// must strictly increase so that newer requests always have greater IDs than
-        /// older requests. If identifier is zero or less than the previous ID value
-        /// then it will be automatically assigned a new valid ID. </param>
         /// <param name="searchText">text to search for</param>
         /// <param name="forward">indicates whether to search forward or backward within the page</param>
         /// <param name="matchCase">indicates whether the search should be case-sensitive</param>
         /// <param name="findNext">indicates whether this is the first request or a follow-up</param>
         /// <remarks>The <see cref="IFindHandler"/> instance, if any, will be called to report find results.</remarks>
-        void Find(int identifier, string searchText, bool forward, bool matchCase, bool findNext);
+        void Find(string searchText, bool forward, bool matchCase, bool findNext);
 
         /// <summary>
         /// Returns the extension hosted in this browser or null if no extension is hosted. See <see cref="IRequestContext.LoadExtension"/> for details.
@@ -335,9 +331,8 @@ namespace CefSharp
         /// <param name="title">to the title to be used for the dialog and may be empty to show the default title ("Open" or "Save" depending on the mode)</param>
         /// <param name="defaultFilePath">is the path with optional directory and/or file name component that will be initially selected in the dialog</param>
         /// <param name="acceptFilters">are used to restrict the selectable file types and may any combination of (a) valid lower-cased MIME types (e.g. "text/*" or "image/*"), (b) individual file extensions (e.g. ".txt" or ".png"), or (c) combined description and file extension delimited using "|" and ";" (e.g. "Image Types|.png;.gif;.jpg")</param>
-        /// <param name="selectedAcceptFilter">is the 0-based index of the filter that will be selected by default</param>
         /// <param name="callback">will be executed after the dialog is dismissed or immediately if another dialog is already pending.</param>
-        void RunFileDialog(CefFileDialogMode mode, string title, string defaultFilePath, IList<string> acceptFilters, int selectedAcceptFilter, IRunFileDialogCallback callback);
+        void RunFileDialog(CefFileDialogMode mode, string title, string defaultFilePath, IList<string> acceptFilters, IRunFileDialogCallback callback);
 
         /// <summary>
         /// Returns the request context for this browser.
@@ -471,7 +466,7 @@ namespace CefSharp
         /// Layouting and rendering notification will stop when the browser is hidden.
         /// This method is only used when window rendering is disabled (WPF/OffScreen). 
         /// </summary>
-        /// <param name="hidden"></param>
+        /// <param name="hidden">if true the browser will be notified that it was hidden.</param>
         void WasHidden(bool hidden);
 
         /// <summary>

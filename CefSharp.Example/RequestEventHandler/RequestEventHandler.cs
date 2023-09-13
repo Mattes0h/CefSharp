@@ -22,10 +22,8 @@ namespace CefSharp.Example.RequestEventHandler
         public event EventHandler<OnBeforeBrowseEventArgs> OnBeforeBrowseEvent;
         public event EventHandler<OnOpenUrlFromTabEventArgs> OnOpenUrlFromTabEvent;
         public event EventHandler<OnCertificateErrorEventArgs> OnCertificateErrorEvent;
-        public event EventHandler<OnPluginCrashedEventArgs> OnPluginCrashedEvent;
         public event EventHandler<GetAuthCredentialsEventArgs> GetAuthCredentialsEvent;
         public event EventHandler<OnRenderProcessTerminatedEventArgs> OnRenderProcessTerminatedEvent;
-        public event EventHandler<OnQuotaRequestEventArgs> OnQuotaRequestEvent;
 
         protected override bool OnBeforeBrowse(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IRequest request, bool userGesture, bool isRedirect)
         {
@@ -55,13 +53,6 @@ namespace CefSharp.Example.RequestEventHandler
             return args.ContinueAsync;
         }
 
-        protected override void OnPluginCrashed(IWebBrowser chromiumWebBrowser, IBrowser browser, string pluginPath)
-        {
-            var args = new OnPluginCrashedEventArgs(chromiumWebBrowser, browser, pluginPath);
-
-            OnPluginCrashedEvent?.Invoke(this, args);
-        }
-
         protected override bool GetAuthCredentials(IWebBrowser chromiumWebBrowser, IBrowser browser, string originUrl, bool isProxy, string host, int port, string realm, string scheme, IAuthCallback callback)
         {
             var args = new GetAuthCredentialsEventArgs(chromiumWebBrowser, browser, originUrl, isProxy, host, port, realm, scheme, callback);
@@ -77,15 +68,6 @@ namespace CefSharp.Example.RequestEventHandler
             var args = new OnRenderProcessTerminatedEventArgs(chromiumWebBrowser, browser, status);
 
             OnRenderProcessTerminatedEvent?.Invoke(this, args);
-        }
-
-        protected override bool OnQuotaRequest(IWebBrowser chromiumWebBrowser, IBrowser browser, string originUrl, long newSize, IRequestCallback callback)
-        {
-            var args = new OnQuotaRequestEventArgs(chromiumWebBrowser, browser, originUrl, newSize, callback);
-            OnQuotaRequestEvent?.Invoke(this, args);
-
-            EnsureCallbackDisposal(callback);
-            return args.ContinueAsync;
         }
 
         private static void EnsureCallbackDisposal(IRequestCallback callbackToDispose)

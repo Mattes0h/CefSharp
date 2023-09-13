@@ -30,11 +30,10 @@ namespace CefSharp
 
             /// <summary>
             /// This function should be called from the application entry point function (typically Program.Main)
-            /// to execute a secondary process e.g. gpu, plugin, renderer, utility
+            /// to execute a secondary process e.g. gpu, renderer, utility
             /// This overload is specifically used for .Net Core. For hosting your own BrowserSubProcess
             /// it's preferable to use the Main method provided by this class.
             /// - Obtains the command line args via a call to Environment::GetCommandLineArgs
-            /// - Calls CefEnableHighDPISupport before any other processing
             /// </summary>
             /// <returns>
             /// If called for the browser process (identified by no "type" command-line value) it will return immediately
@@ -49,11 +48,10 @@ namespace CefSharp
 
             /// <summary>
             /// This function should be called from the application entry point function (typically Program.Main)
-            /// to execute a secondary process e.g. gpu, plugin, renderer, utility
+            /// to execute a secondary process e.g. gpu, renderer, utility
             /// This overload is specifically used for .Net Core. For hosting your own BrowserSubProcess
             /// it's preferable to use the Main method provided by this class.
             /// - Obtains the command line args via a call to Environment::GetCommandLineArgs
-            /// - Calls CefEnableHighDPISupport before any other processing
             /// </summary>
             /// <returns>
             /// If called for the browser process (identified by no "type" command-line value) it will return immediately
@@ -62,8 +60,6 @@ namespace CefSharp
             /// </returns
             static int MainNetCore(IntPtr arg, int argLength)
             {
-                SubProcess::EnableHighDPISupport();
-
                 auto args = Environment::GetCommandLineArgs();
 
                 auto subProcess = gcnew BrowserSubprocessExecutable();
@@ -72,7 +68,7 @@ namespace CefSharp
 
             /// <summary>
             /// This function should be called from the application entry point function (typically Program.Main)
-            /// to execute a secondary process e.g. gpu, plugin, renderer, utility
+            /// to execute a secondary process e.g. gpu, renderer, utility
             /// It can be used to run secondary processes (BrowserSubProcess) from your main applications executable
             /// or from a separate executable specified by the CefSettings.BrowserSubprocessPath value.
             /// CefSharp defaults to using the latter approach, a default implementation (CefSharp.BrowserSubProcess.exe) is
@@ -91,7 +87,7 @@ namespace CefSharp
 
             /// <summary>
             /// This function should be called from the application entry point function (typically Program.Main)
-            /// to execute a secondary process e.g. gpu, plugin, renderer, utility
+            /// to execute a secondary process e.g. gpu, renderer, utility
             /// It can be used to run secondary processes (BrowserSubProcess) from your main applications executable
             /// or from a separate executable specified by the CefSettings.BrowserSubprocessPath value.
             /// CefSharp defaults to using the latter approach, a default implementation (CefSharp.BrowserSubProcess.exe) is
@@ -120,8 +116,19 @@ namespace CefSharp
 
                 // The Crashpad Handler doesn't have any HostProcessIdArgument, so we must not try to
                 // parse it lest we want an ArgumentNullException.
-                if (type != "crashpad-handler")
+                if (type == "crashpad-handler")
                 {
+                    //Lower the shutdown priority so the browser process is shutdown first (Issue #3155)
+                    //The system terminates the process without displaying a retry dialog box for the user.
+                    //Crashpad is lower than other sub processes so it can still monitor process exit crashes.
+                    SetProcessShutdownParameters(0x100, SHUTDOWN_NORETRY);
+                }
+                else
+                {
+                    //Lower the shutdown priority so the browser process is shutdown first (Issue #3155)
+                    //The system terminates the process without displaying a retry dialog box for the user.
+                    SetProcessShutdownParameters(0x200, SHUTDOWN_NORETRY);
+
                     parentProcessId = int::Parse(CommandLineArgsParser::GetArgumentValue(args, CefSharpArguments::HostProcessIdArgument));
                     if (CommandLineArgsParser::HasArgument(args, CefSharpArguments::ExitIfParentProcessClosed))
                     {

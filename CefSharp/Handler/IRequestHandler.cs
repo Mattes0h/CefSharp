@@ -15,8 +15,8 @@ namespace CefSharp
     {
         /// <summary>
         /// Called before browser navigation.
-        /// If the navigation is allowed <see cref="IWebBrowser.FrameLoadStart"/> and <see cref="IWebBrowser.FrameLoadEnd"/>
-        /// will be called. If the navigation is canceled <see cref="IWebBrowser.LoadError"/> will be called with an ErrorCode
+        /// If the navigation is allowed <see cref="IChromiumWebBrowserBase.FrameLoadStart"/> and <see cref="IChromiumWebBrowserBase.FrameLoadEnd"/>
+        /// will be called. If the navigation is canceled <see cref="IChromiumWebBrowserBase.LoadError"/> will be called with an ErrorCode
         /// value of <see cref="CefErrorCode.Aborted"/>. 
         /// </summary>
         /// <param name="chromiumWebBrowser">the ChromiumWebBrowser control</param>
@@ -89,21 +89,6 @@ namespace CefSharp
         bool GetAuthCredentials(IWebBrowser chromiumWebBrowser, IBrowser browser, string originUrl, bool isProxy, string host, int port, string realm, string scheme, IAuthCallback callback);
 
         /// <summary>
-        /// Called when JavaScript requests a specific storage quota size via the webkitStorageInfo.requestQuota function.
-        /// For async processing return true and execute <see cref="IRequestCallback.Continue"/> at a later time to 
-        /// grant or deny the request or <see cref="IRequestCallback.Cancel"/> to cancel.
-        /// </summary>
-        /// <param name="chromiumWebBrowser">The ChromiumWebBrowser control</param>
-        /// <param name="browser">the browser object</param>
-        /// <param name="originUrl">the origin of the page making the request</param>
-        /// <param name="newSize">is the requested quota size in bytes</param>
-        /// <param name="callback">Callback interface used for asynchronous continuation of url requests.</param>
-        /// <returns>Return false to cancel the request immediately. Return true to continue the request
-        /// and call <see cref="IRequestCallback.Continue"/> either in this method or at a later time to
-        /// grant or deny the request.</returns>
-        bool OnQuotaRequest(IWebBrowser chromiumWebBrowser, IBrowser browser, string originUrl, Int64 newSize, IRequestCallback callback);
-
-        /// <summary>
         /// Called to handle requests for URLs with an invalid SSL certificate.
         /// Return true and call <see cref="IRequestCallback.Continue"/> either
         /// in this method or at a later time to continue or cancel the request.  
@@ -134,14 +119,6 @@ namespace CefSharp
         /// <returns>Return true to continue the request and call ISelectClientCertificateCallback.Select() with the selected certificate for authentication. 
         /// Return false to use the default behavior where the browser selects the first certificate from the list. </returns>
         bool OnSelectClientCertificate(IWebBrowser chromiumWebBrowser, IBrowser browser, bool isProxy, string host, int port, X509Certificate2Collection certificates, ISelectClientCertificateCallback callback);
-
-        /// <summary>
-        /// Called when a plugin has crashed
-        /// </summary>
-        /// <param name="chromiumWebBrowser">the ChromiumWebBrowser control</param>
-        /// <param name="browser">the browser object</param>
-        /// <param name="pluginPath">path of the plugin that crashed</param>
-        void OnPluginCrashed(IWebBrowser chromiumWebBrowser, IBrowser browser, string pluginPath);
 
         /// <summary>
         /// Called on the CEF UI thread when the render view associated

@@ -17,12 +17,26 @@
             await CefSharp.BindObjectAsync("boundAsync");
         });
 
-        QUnit.test("Async call (Divide 16 / 2):", async (assert) =>
+        QUnit.test("Pass callback(promise) that is conditionally invoked:", async (assert) =>
         {
-            const expectedResult = 8
-            const actualResult = await boundAsync.div(16, 2);
+            let callback = function (msg)
+            {
+                return new Promise((resolve, reject) =>
+                {
+                    setTimeout(() =>
+                    {
+                        resolve(msg);
+                    }, 300);
+                });
+            };
 
-            assert.equal(expectedResult, actualResult, "Divide 16 / 2 resulted in " + expectedResult);
+            const expectedResult = "Callback has not been invoked";
+            const actualResult = await boundAsync.javascriptOptionalCallbackEvalPromise(false, expectedResult, callback);
+            assert.equal(expectedResult, actualResult, "Echo response after promise execution");
+
+            const expectedSecondResult = "Callback has been invoked";
+            const actualSecondResult = await boundAsync.javascriptOptionalCallbackEvalPromise(true, expectedSecondResult, callback);
+            assert.equal(expectedSecondResult, actualSecondResult, "Echo response after promise execution");
         });
     });
     </script>

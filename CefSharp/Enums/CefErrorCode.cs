@@ -151,12 +151,7 @@ namespace CefSharp
         /// </summary>
         SocketIsConnected = -23,
 
-        /// <summary>
-        /// The request was blocked because the forced reenrollment check is still
-        /// pending. This error can only occur on ChromeOS.
-        /// The error can be emitted by code in chrome/browser/policy/policy_helpers.cc.
-        /// </summary>
-        BlockedEnrollmentCheckPending = -24,
+        // Error -24 was removed (BLOCKED_ENROLLMENT_CHECK_PENDING)
 
         /// <summary>
         /// The upload failed because the upload stream needed to be re-read, due to a
@@ -173,7 +168,7 @@ namespace CefSharp
         /// <summary>
         /// The request failed because the response was delivered along with requirements
         /// which are not met ('X-Frame-Options' and 'Content-Security-Policy' ancestor
-        /// checks and 'Cross-Origin-Resource-Policy', for instance).
+        /// checks and 'Cross-Origin-Resource-Policy' for instance).
         /// </summary>
         BlockedByResponse = -27,
 
@@ -194,6 +189,11 @@ namespace CefSharp
         /// The request was blocked because of no H/2 or QUIC session.
         /// </summary>
         H2OrQuicRequired = -31,
+
+        /// <summary>
+        /// The request was blocked by CORB or ORB.
+        /// </summary>
+        BlockedByOrb = -32,
 
         /// <summary>
         /// A connection was closed (corresponding to a TCP FIN).
@@ -280,14 +280,7 @@ namespace CefSharp
         /// </summary>
         ProxyAuthUnsupported = -115,
 
-        /// <summary>
-        /// During SSL renegotiation (rehandshake), the server sent a certificate with
-        /// an error.
-        ///
-        /// Note: this error is not in the -2xx range so that it won't be handled as a
-        /// certificate error.
-        /// </summary>
-        CertErrorInSslRenegotiation = -116,
+        // Error -116 was removed (CERT_ERROR_IN_SSL_RENEGOTIATION)
 
         /// <summary>
         /// The SSL handshake failed because of a bad or missing client certificate.
@@ -638,6 +631,23 @@ namespace CefSharp
         /// </summary>
         SslKeyUsageIncompatible = -181,
 
+        /// <summary>
+        /// The ECHConfigList fetched over DNS cannot be parsed.
+        /// </summary>
+        InvalidEchConfigList = -182,
+
+        /// <summary>
+        /// ECH was enabled, but the server was unable to decrypt the encrypted
+        /// ClientHello.
+        /// </summary>
+        EchNotNegotiated = -183,
+
+        /// <summary>
+        /// ECH was enabled, the server was unable to decrypt the encrypted ClientHello,
+        /// and additionally did not present a certificate valid for the public name.
+        /// </summary>
+        EchFallbackCertificateInvalid = -184,
+
         // Certificate error codes
         //
         // The values of certificate error codes must be consecutive.
@@ -744,7 +754,7 @@ namespace CefSharp
         /// </summary>
         CertWeakSignatureAlgorithm = -208,
 
-        // -209 is availible: was CERT_NOT_IN_DNS.
+        // -209 is available: was CERT_NOT_IN_DNS.
 
         /// <summary>
         /// The host name specified in the certificate is not unique.
@@ -788,10 +798,8 @@ namespace CefSharp
         /// </summary>
         CertKnownInterceptionBlocked = -217,
 
-        /// <summary>
-        /// The connection uses an obsolete version of SSL/TLS.
-        /// </summary>
-        SslObsoleteVersion = -218,
+        // -218 was SSL_OBSOLETE_VERSION which is not longer used. TLS 1.0/1.1 instead
+        // cause SSL_VERSION_OR_CIPHER_MISMATCH now.
 
         // Add new certificate error codes here.
         //
@@ -1041,7 +1049,7 @@ namespace CefSharp
         ResponseHeadersTruncated = -357,
 
         /// <summary>
-        /// The QUIC crytpo handshake failed.  This means that the server was unable
+        /// The QUIC crypto handshake failed.  This means that the server was unable
         /// to read any requests sent, so they may be resent.
         /// </summary>
         QuicHandshakeFailed = -358,
@@ -1171,6 +1179,24 @@ namespace CefSharp
         QuicGoawayRequestCanBeRetried = -381,
 
         /// <summary>
+        /// The ACCEPT_CH restart has been triggered too many times
+        /// </summary>
+        TooManyAcceptChRestarts = -382,
+
+        /// <summary>
+        /// The IP address space of the remote endpoint differed from the previous
+        /// observed value during the same request. Any cache entry for the affected
+        /// request should be invalidated.
+        /// </summary>
+        InconsistentIpAddressSpace = -383,
+
+        /// <summary>
+        /// The IP address space of the cached remote endpoint is blocked by local
+        /// network access check.
+        /// </summary>
+        CachedIpAddressSpaceBlockedByLocalNetworkAccessPolicy = -384,
+
+        /// <summary>
         /// The cache does not have the requested entry.
         /// </summary>
         CacheMiss = -400,
@@ -1236,7 +1262,7 @@ namespace CefSharp
 
         /// <summary>
         /// Internal not-quite error code for the HTTP cache. In-memory hints suggest
-        /// that the cache entry would not have been useable with the transaction's
+        /// that the cache entry would not have been usable with the transaction's
         /// current configuration (e.g. load flags, mode, etc.)
         /// </summary>
         CacheEntryNotSuitable = -411,
@@ -1470,6 +1496,17 @@ namespace CefSharp
         /// Error should be handled as if an HTTP redirect was received to redirect to
         /// https or wss.
         /// </summary>
-        DnsNameHttpsOnly = 809,
+        DnsNameHttpsOnly = -809,
+
+        /// <summary>
+        /// All DNS requests associated with this job have been cancelled.
+        /// </summary>
+        DnsRequestCancelled = -810,
+
+        /// <summary>
+        /// The hostname resolution of HTTPS record was expected to be resolved with
+        /// alpn values of supported protocols, but did not.
+        /// </summary>
+        DnsNoMatchingSupportedAlpn = -811,
     };
 }

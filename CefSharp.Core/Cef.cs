@@ -5,7 +5,6 @@
 //NOTE:Classes in the CefSharp.Core namespace have been hidden from intellisnse so users don't use them directly
 
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using CefSharp.Internals;
 
@@ -18,6 +17,15 @@ namespace CefSharp
     /// </summary>
     public static class Cef
     {
+        /// <summary>
+        /// Event is raised when <see cref="Cef.Shutdown"/> is called,
+        /// before the shutdown logic is executed.
+        /// </summary>
+        /// <remarks>
+        /// Will be called on the same thread as <see cref="Cef.Shutdown"/>
+        /// </remarks>
+        public static event EventHandler ShutdownStarted;
+
         public static TaskFactory UIThreadTaskFactory
         {
             get { return Core.Cef.UIThreadTaskFactory; }
@@ -106,7 +114,7 @@ namespace CefSharp
         /// <returns>true if successful; otherwise, false.</returns>
         public static bool Initialize(CefSettingsBase settings)
         {
-            using (settings.settings)
+            using (settings)
             {
                 return Core.Cef.Initialize(settings.settings);
             }
@@ -123,7 +131,7 @@ namespace CefSharp
         /// <returns>true if successful; otherwise, false.</returns>
         public static bool Initialize(CefSettingsBase settings, bool performDependencyCheck)
         {
-            using (settings.settings)
+            using (settings)
             {
                 return Core.Cef.Initialize(settings.settings, performDependencyCheck);
             }
@@ -141,7 +149,7 @@ namespace CefSharp
         /// <returns>true if successful; otherwise, false.</returns>
         public static bool Initialize(CefSettingsBase settings, bool performDependencyCheck, IBrowserProcessHandler browserProcessHandler)
         {
-            using (settings.settings)
+            using (settings)
             {
                 return Core.Cef.Initialize(settings.settings, performDependencyCheck, browserProcessHandler);
             }
@@ -159,7 +167,7 @@ namespace CefSharp
         /// <returns>true if successful; otherwise, false.</returns>
         public static bool Initialize(CefSettingsBase settings, bool performDependencyCheck, IApp cefApp)
         {
-            using (settings.settings)
+            using (settings)
             {
                 return Core.Cef.Initialize(settings.settings, performDependencyCheck, cefApp);
             }
@@ -174,35 +182,28 @@ namespace CefSharp
         /// </summary>
         /// <param name="settings">CefSharp configuration settings.</param>
         /// <param name="performDependencyCheck">Check that all relevant dependencies available, throws exception if any are missing</param>
+        /// <param name="browserProcessHandler">The handler for functionality specific to the browser process. Null if you don't wish to handle these events</param>
         /// <returns>returns a Task that can be awaited. true if successful; otherwise, false. If false check the log file for possible errors</returns>
         /// <remarks>
         /// If successful then the Task will be completed successfully when <see cref="IBrowserProcessHandler.OnContextInitialized"/> is called.
         /// If successful then the continuation will happen syncrionously on the CEF UI thread.
         /// </remarks>
-        public static Task<bool> InitializeAsync(CefSettingsBase settings, bool performDependencyCheck = true)
+        public static Task<bool> InitializeAsync(CefSettingsBase settings, bool performDependencyCheck = true, IBrowserProcessHandler browserProcessHandler = null)
         {
-            var tcs = new TaskCompletionSource<bool>();
-            var handler = new InitializeAsyncBrowserProcessHandler(tcs);
-
-            using (settings.settings)
+            using (settings)
             {
                 try
                 {
-                    var success = Core.Cef.Initialize(settings.settings, performDependencyCheck, handler);
-
-                    //Failed, need to check the log file
-                    if (!success)
-                    {
-                        tcs.TrySetResult(false);
-                    }
+                    //Ignore the result, the Task will be set in Core.Cef.Initialze
+                    Core.Cef.Initialize(settings.settings, performDependencyCheck, browserProcessHandler);
                 }
                 catch (Exception ex)
                 {
-                    tcs.TrySetException(ex);
+                    GlobalContextInitialized.SetException(ex);
                 }
             }
 
-            return tcs.Task;
+            return GlobalContextInitialized.Task;
         }
 
         /// <summary>
@@ -387,6 +388,9 @@ namespace CefSharp
         /// </summary>
         public static void Shutdown()
         {
+            ShutdownStarted?.Invoke(null, EventArgs.Empty);
+            ShutdownStarted = null;
+
             Core.Cef.Shutdown();
         }
 
@@ -401,6 +405,9 @@ namespace CefSharp
         /// </summary>
         public static void ShutdownWithoutChecks()
         {
+            ShutdownStarted?.Invoke(null, EventArgs.Empty);
+            ShutdownStarted = null;
+
             Core.Cef.ShutdownWithoutChecks();
         }
 
@@ -413,51 +420,6 @@ namespace CefSharp
         public static bool ClearSchemeHandlerFactories()
         {
             return Core.Cef.ClearSchemeHandlerFactories();
-        }
-
-        /// <summary>
-        /// Visit web plugin information. Can be called on any thread in the browser process.
-        /// </summary>
-        public static void VisitWebPluginInfo(IWebPluginInfoVisitor visitor)
-        {
-            Core.Cef.VisitWebPluginInfo(visitor);
-        }
-
-        /// <summary>
-        /// Async returns a list containing Plugin Information
-        /// (Wrapper around CefVisitWebPluginInfo)
-        /// </summary>
-        /// <returns>Returns List of <see cref="WebPluginInfo"/> structs.</returns>
-        public static Task<List<WebPluginInfo>> GetPlugins()
-        {
-            return Core.Cef.GetPlugins();
-        }
-
-        /// <summary>
-        /// Cause the plugin list to refresh the next time it is accessed regardless of whether it has already been loaded.
-        /// </summary>
-        public static void RefreshWebPlugins()
-        {
-            Core.Cef.RefreshWebPlugins();
-        }
-
-        /// <summary>
-        /// Unregister an internal plugin. This may be undone the next time RefreshWebPlugins() is called. 
-        /// </summary>
-        /// <param name="path">Path (directory + file).</param>
-        public static void UnregisterInternalWebPlugin(string path)
-        {
-            Core.Cef.UnregisterInternalWebPlugin(path);
-        }
-
-        /// <summary>
-        /// Call during process startup to enable High-DPI support on Windows 7 or newer.
-        /// Older versions of Windows should be left DPI-unaware because they do not
-        /// support DirectWrite and GDI fonts are kerned very badly.
-        /// </summary>
-        public static void EnableHighDPISupport()
-        {
-            Core.Cef.EnableHighDPISupport();
         }
 
         /// <summary>
@@ -579,9 +541,11 @@ namespace CefSharp
         /// <summary>
         /// Sets or clears a specific key-value pair from the crash metadata.
         /// </summary>
-        public static void SetCrashKeyValue(string c, string value)
+        /// <param name="key">key</param>
+        /// <param name="value">value</param>
+        public static void SetCrashKeyValue(string key, string value)
         {
-            Core.Cef.SetCrashKeyValue(value, value);
+            Core.Cef.SetCrashKeyValue(key, value);
         }
 
         /// <summary>
@@ -667,6 +631,45 @@ namespace CefSharp
         public static void WaitForBrowsersToClose()
         {
             Core.Cef.WaitForBrowsersToClose();
+        }
+
+
+        /// <summary>
+        /// Helper method to ensure all ChromiumWebBrowser instances have been
+        /// closed/disposed, should be called before Cef.Shutdown.
+        /// Disposes all remaining ChromiumWebBrowser instances
+        /// then waits for CEF to release its remaining CefBrowser instances.
+        /// Finally a small delay of 50ms to allow for CEF to finish it's cleanup.
+        /// Should only be called when MultiThreadedMessageLoop = true;
+        /// (Hasn't been tested when when CEF integrates into main message loop).
+        /// </summary>
+        /// <param name="timeoutInMiliseconds">The timeout in miliseconds.</param>
+        public static void WaitForBrowsersToClose(int timeoutInMiliseconds)
+        {
+            Core.Cef.WaitForBrowsersToClose(timeoutInMiliseconds);
+        }
+
+        /// <summary>
+        /// Post an action for delayed execution on the specified thread.
+        /// </summary>
+        /// <param name="threadId">thread id</param>
+        /// <param name="action">action to execute</param>
+        /// <param name="delayInMs">delay in ms</param>
+        /// <returns>bool</returns>
+        public static bool PostDelayedAction(CefThreadIds threadId, Action action, int delayInMs)
+        {
+            return Core.Cef.PostDelayedAction(threadId, action, delayInMs);
+        }
+
+        /// <summary>
+        /// Post an action for execution on the specified thread.
+        /// </summary>
+        /// <param name="threadId">thread id</param>
+        /// <param name="action">action to execute</param>
+        /// <returns>bool</returns>
+        public static bool PostAction(CefThreadIds threadId, Action action)
+        {
+            return Core.Cef.PostAction(threadId, action);
         }
     }
 }

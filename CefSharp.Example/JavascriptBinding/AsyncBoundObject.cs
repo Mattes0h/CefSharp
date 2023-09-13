@@ -105,6 +105,16 @@ namespace CefSharp.Example.JavascriptBinding
             };
         }
 
+        public DateTime EchoDateTime(DateTime arg0)
+        {
+            return arg0;
+        }
+
+        public DateTime? EchoNullableDateTime(DateTime? arg0)
+        {
+            return arg0;
+        }
+
         public string[] EchoArray(string[] arg)
         {
             return arg;
@@ -208,7 +218,7 @@ namespace CefSharp.Example.JavascriptBinding
 
         public async Task<string> JavascriptCallbackEvalPromise(string msg, IJavascriptCallback callback)
         {
-            var response = await callback.ExecuteAsync(callback.Id, msg);
+            var response = await callback.ExecuteAsync(msg);
 
             //Echo the response
             return (string)response.Result;
@@ -255,6 +265,21 @@ namespace CefSharp.Example.JavascriptBinding
         public uint UIntAdd(uint paramA, uint paramB)
         {
             return paramA + paramB;
+        }
+
+        public async Task<string> JavascriptOptionalCallbackEvalPromise(bool invokeCallback, string msg, IJavascriptCallback callback)
+        {
+            using (callback)
+            {
+                if (invokeCallback)
+                {
+                    var response = await callback.ExecuteAsync(msg).ConfigureAwait(false);
+                    //Echo the response
+                    return (string)response.Result;
+                }
+
+                return msg;
+            }
         }
     }
 }

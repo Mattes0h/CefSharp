@@ -34,7 +34,6 @@ namespace CefSharp.Core
         public virtual CefSharp.CefState LocalStorage { get { throw null; } set { } }
         public virtual int MinimumFontSize { get { throw null; } set { } }
         public virtual int MinimumLogicalFontSize { get { throw null; } set { } }
-        public virtual CefSharp.CefState Plugins { get { throw null; } set { } }
         public virtual CefSharp.CefState RemoteFonts { get { throw null; } set { } }
         public virtual string SansSerifFontFamily { get { throw null; } set { } }
         public virtual string SerifFontFamily { get { throw null; } set { } }
@@ -69,7 +68,6 @@ namespace CefSharp.Core
         public static uint ColorSetARGB(uint a, uint r, uint g, uint b) { throw null; }
         public static bool CurrentlyOnThread(CefSharp.CefThreadIds threadId) { throw null; }
         public static void DoMessageLoopWork() { }
-        public static void EnableHighDPISupport() { }
         public static void EnableWaitForBrowsersToClose() { }
         public static int ExecuteProcess() { throw null; }
         public static CefSharp.ICookieManager GetGlobalCookieManager() { throw null; }
@@ -77,31 +75,29 @@ namespace CefSharp.Core
         public static CefSharp.IRequestContext GetGlobalRequestContext() { throw null; }
         public static string GetMimeType(string extension) { throw null; }
         public static int GetMinLogLevel() { throw null; }
-        public static System.Threading.Tasks.Task<System.Collections.Generic.List<CefSharp.WebPluginInfo>> GetPlugins() { throw null; }
         public static bool Initialize(CefSharp.Core.CefSettingsBase cefSettings) { throw null; }
         public static bool Initialize(CefSharp.Core.CefSettingsBase cefSettings, bool performDependencyCheck) { throw null; }
         public static bool Initialize(CefSharp.Core.CefSettingsBase cefSettings, bool performDependencyCheck, CefSharp.IApp cefApp) { throw null; }
         public static bool Initialize(CefSharp.Core.CefSettingsBase cefSettings, bool performDependencyCheck, CefSharp.IBrowserProcessHandler browserProcessHandler) { throw null; }
         public static CefSharp.UrlParts ParseUrl(string url) { throw null; }
+        public static bool PostAction(CefSharp.CefThreadIds threadId, System.Action action) { throw null; }
+        public static bool PostDelayedAction(CefSharp.CefThreadIds threadId, System.Action action, int delayInMs) { throw null; }
         public static void PreShutdown() { }
         public static void QuitMessageLoop() { }
-        public static void RefreshWebPlugins() { }
         public static bool RemoveCrossOriginWhitelistEntry(string sourceOrigin, string targetProtocol, string targetDomain, bool allowTargetSubdomains) { throw null; }
         public static void RemoveDisposable(System.IDisposable item) { }
         public static void RunMessageLoop() { }
         public static void SetCrashKeyValue(string key, string value) { }
         public static void Shutdown() { }
         public static void ShutdownWithoutChecks() { }
-        public static void UnregisterInternalWebPlugin(string path) { }
-        public static void VisitWebPluginInfo(CefSharp.IWebPluginInfoVisitor visitor) { }
         public static void WaitForBrowsersToClose() { }
+        public static void WaitForBrowsersToClose(int timeoutInMiliseconds) { }
     }
     [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Never)]
     public sealed partial class CefSettingsBase : System.IDisposable
     {
         public CefSettingsBase() { }
         public string AcceptLanguageList { get { throw null; } set { } }
-        public string ApplicationClientIdForFileScanning { get { throw null; } set { } }
         public uint BackgroundColor { get { throw null; } set { } }
         public string BrowserSubprocessPath { get { throw null; } set { } }
         public string CachePath { get { throw null; } set { } }
@@ -154,6 +150,7 @@ namespace CefSharp.Core
         public virtual string LinkTitle { get { throw null; } set { } }
         public virtual string LinkUrl { get { throw null; } set { } }
         public virtual void AddFile(string path, string displayName) { }
+        public virtual void ClearFilenames() { }
         public virtual CefSharp.IDragData Clone() { throw null; }
         public static CefSharp.IDragData Create() { throw null; }
         public void Dispose() { }
@@ -183,6 +180,7 @@ namespace CefSharp.Core
     {
         public NativeMethodWrapper() { }
         public static bool IsFocused(System.IntPtr handle) { throw null; }
+        public static System.IntPtr LoadCursorFromLibCef(int resourceIdentifier) { throw null; }
         public static void MemoryCopy(System.IntPtr dest, System.IntPtr src, int numberOfBytes) { }
         public static void RemoveExNoActivateStyle(System.IntPtr browserHwnd) { }
         public static void SetWindowParent(System.IntPtr child, System.IntPtr newParent) { }
@@ -193,10 +191,7 @@ namespace CefSharp.Core
     {
         internal PopupFeatures() { }
         public virtual int? Height { get { throw null; } }
-        public virtual bool MenuBarVisible { get { throw null; } }
-        public virtual bool ScrollbarsVisible { get { throw null; } }
-        public virtual bool StatusBarVisible { get { throw null; } }
-        public virtual bool ToolBarVisible { get { throw null; } }
+        public virtual bool IsPopup { get { throw null; } }
         public virtual int? Width { get { throw null; } }
         public virtual int? X { get { throw null; } }
         public virtual int? Y { get { throw null; } }
@@ -289,7 +284,6 @@ namespace CefSharp.Core
         public virtual bool IsSame(CefSharp.IRequestContext context) { throw null; }
         public virtual bool IsSharingWith(CefSharp.IRequestContext context) { throw null; }
         public virtual void LoadExtension(string rootDirectory, string manifestJson, CefSharp.IExtensionHandler handler) { }
-        public virtual void PurgePluginListCache(bool reloadPages) { }
         public virtual bool RegisterSchemeHandlerFactory(string schemeName, string domainName, CefSharp.ISchemeHandlerFactory factory) { throw null; }
         public virtual System.Threading.Tasks.Task<CefSharp.ResolveCallbackResult> ResolveHostAsync(System.Uri origin) { throw null; }
         public virtual bool SetPreference(string name, object value, out string error) { throw null; }
@@ -334,6 +328,7 @@ namespace CefSharp.Core
         public virtual int Width { get { throw null; } set { } }
         public virtual System.IntPtr WindowHandle { get { throw null; } set { } }
         public virtual bool WindowlessRenderingEnabled { get { throw null; } set { } }
+        public virtual string WindowName { get { throw null; } set { } }
         public virtual int X { get { throw null; } set { } }
         public virtual int Y { get { throw null; } set { } }
         public void Dispose() { }

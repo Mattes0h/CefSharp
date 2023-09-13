@@ -93,11 +93,6 @@ namespace CefSharp
 
             virtual void OnContextInitialized() override
             {
-                if (!Object::ReferenceEquals(_app, nullptr) && !Object::ReferenceEquals(_app->BrowserProcessHandler, nullptr))
-                {
-                    _app->BrowserProcessHandler->OnContextInitialized();
-                }
-
                 auto customSchemes = (IEnumerable<CefCustomScheme^>^)_customSchemes;
 
                 //CefRegisterSchemeHandlerFactory requires access to the Global CefRequestContext
@@ -111,9 +106,16 @@ namespace CefSharp
                         CefRegisterSchemeHandlerFactory(StringUtils::ToNative(cefCustomScheme->SchemeName), StringUtils::ToNative(domainName), wrapper);
                     }
                 }
+
+                CefSharp::Internals::GlobalContextInitialized::SetResult(true);
+
+                if (!Object::ReferenceEquals(_app, nullptr) && !Object::ReferenceEquals(_app->BrowserProcessHandler, nullptr))
+                {
+                    _app->BrowserProcessHandler->OnContextInitialized();
+                }
             }
 
-            virtual void OnScheduleMessagePumpWork(int64 delay_ms)  override
+            virtual void OnScheduleMessagePumpWork(int64_t delay_ms)  override
             {
                 //We rely on previous checks to make sure _app and _app->BrowserProcessHandler aren't null
                 _app->BrowserProcessHandler->OnScheduleMessagePumpWork(delay_ms);
@@ -133,7 +135,7 @@ namespace CefSharp
                     commandLine->AppendSwitch(StringUtils::ToNative(CefSharpArguments::ExitIfParentProcessClosed));
                 }
 
-                //ChannelId was removed in https://bitbucket.org/chromiumembedded/cef/issues/1912/notreached-in-logchannelidandcookiestores
+                //ChannelId was removed in https://github.com/chromiumembedded/cef/issues/1912
                 //We need to know the process Id to establish WCF communication and for monitoring of parent process exit
                 commandLine->AppendArgument(StringUtils::ToNative(CefSharpArguments::HostProcessIdArgument + "=" + Process::GetCurrentProcess()->Id));
 

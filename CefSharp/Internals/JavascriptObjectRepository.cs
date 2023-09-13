@@ -250,6 +250,9 @@ namespace CefSharp.Internals
             jsObject.IsAsync = isAsync;
             jsObject.Binder = options?.Binder;
             jsObject.MethodInterceptor = options?.MethodInterceptor;
+#if !NETCOREAPP
+            jsObject.PropertyInterceptor = options?.PropertyInterceptor;
+#endif
 
             AnalyseObjectForBinding(jsObject, analyseMethods: true, analyseProperties: !isAsync, readPropertyValue: false);
         }
@@ -290,7 +293,9 @@ namespace CefSharp.Internals
 
             if (!objects.TryGetValue(objectId, out obj))
             {
-                return new TryCallMethodResult(false, result, "Object Not Found Matching Id:" + objectId);
+                var paramCount = parameters == null ? 0 : parameters.Length;
+
+                return new TryCallMethodResult(false, result, $"Object Not Found Matching Id:{objectId}, MethodName:{name}, ParamCount:{paramCount}");
             }
 
             var method = obj.Methods.FirstOrDefault(p => p.JavascriptName == name);
@@ -562,6 +567,7 @@ namespace CefSharp.Internals
             return new TryCallMethodResult(false, result, exception);
         }
 
+#if !NETCOREAPP
         bool IJavascriptObjectRepositoryInternal.TryGetProperty(long objectId, string name, out object result, out string exception)
         {
             return TryGetProperty(objectId, name, out result, out exception);
@@ -585,8 +591,14 @@ namespace CefSharp.Internals
 
             try
             {
-                result = property.GetValue(obj.Value);
-
+                if (obj.PropertyInterceptor == null)
+                {
+                    result = property.GetValue(obj.Value);
+                }
+                else
+                {
+                    result = obj.PropertyInterceptor.InterceptGet(() => property.GetValue(obj.Value), property.ManagedName);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -596,7 +608,9 @@ namespace CefSharp.Internals
 
             return false;
         }
+#endif
 
+#if !NETCOREAPP
         bool IJavascriptObjectRepositoryInternal.TrySetProperty(long objectId, string name, object value, out string exception)
         {
             return TrySetProperty(objectId, name, value, out exception);
@@ -618,8 +632,14 @@ namespace CefSharp.Internals
             }
             try
             {
-                property.SetValue(obj.Value, value);
-
+                if (obj.PropertyInterceptor == null)
+                {
+                    property.SetValue(obj.Value, value);
+                }
+                else
+                {
+                    obj.PropertyInterceptor.InterceptSet((p) => property.SetValue(obj.Value, p), value, property.ManagedName);
+                }
                 return true;
             }
             catch (Exception ex)
@@ -629,6 +649,8 @@ namespace CefSharp.Internals
 
             return false;
         }
+#endif
+
 
         /// <summary>
         /// Analyse the object and generate metadata which will
@@ -639,7 +661,6 @@ namespace CefSharp.Internals
         /// <param name="analyseMethods">Analyse methods for inclusion in metadata model</param>
         /// <param name="analyseProperties">Analyse properties for inclusion in metadata model</param>
         /// <param name="readPropertyValue">When analysis is done on a property, if true then get it's value for transmission over WCF</param>
-        /// <param name="nameConverter">convert names of properties/methods</param>
         private void AnalyseObjectForBinding(JavascriptObject obj, bool analyseMethods, bool analyseProperties, bool readPropertyValue)
         {
             if (obj.Value == null)

@@ -10,27 +10,20 @@
   <Target Name="CefSharpCopyBrowserSubprocess" AfterTargets="AfterBuild">
     <ItemGroup>
       <!-- We only need the .exe and .pdb but I don't know how to express that easily with MSBuild... -->
-      <SubProcessFiles Include="$(SolutionDir)CefSharp.BrowserSubprocess\bin.netcore\$(Platform)\$(Configuration)\$(TargetFramework)\CefSharp.BrowserSubprocess.*" />
+      <SubProcessFiles Include="$(MSBuildThisFileDirectory)CefSharp.BrowserSubprocess\bin.netcore\$(Platform)\$(Configuration)\$(TargetFramework)\CefSharp.BrowserSubprocess.*" />
     </ItemGroup>
-    <Message Importance="high" Text="Copying $(SolutionDir)CefSharp.BrowserSubprocess\bin.netcore\$(Platform)\$(Configuration)\$(TargetFramework)\CefSharp.BrowserSubprocess.* to $(TargetDir)" />
+    <Message Importance="high" Text="Copying $(MSBuildThisFileDirectory)CefSharp.BrowserSubprocess\bin.netcore\$(Platform)\$(Configuration)\$(TargetFramework)\CefSharp.BrowserSubprocess.* to $(TargetDir)" />
     <Copy SourceFiles="@(SubProcessFiles)" DestinationFolder="$(TargetDir)" />
   </Target>
   
   <!--
-  Include swiftshader and locales in the Example projects
+  Include locales in the Example projects
   -->
   <Choose>
     <When Condition="$(RuntimeIdentifier.StartsWith('win')) and $(RuntimeIdentifier.Contains('-x64'))">
       <ItemGroup>
         <Content Include="@(CefRuntimeWin64Locales)">
           <Link>locales\%(RecursiveDir)%(FileName)%(Extension)</Link>
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <PublishState>Included</PublishState>
-          <Visible>false</Visible>
-          <IncludeInVsix>true</IncludeInVsix>
-        </Content>
-        <Content Include="@(CefRuntimeWin64SwiftShader)">
-          <Link>swiftshader\%(RecursiveDir)%(FileName)%(Extension)</Link>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           <PublishState>Included</PublishState>
           <Visible>false</Visible>
@@ -47,26 +40,12 @@
           <Visible>false</Visible>
           <IncludeInVsix>true</IncludeInVsix>
         </Content>
-        <Content Include="@(CefRuntimeWin32SwiftShader)">
-          <Link>swiftshader\%(RecursiveDir)%(FileName)%(Extension)</Link>
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <PublishState>Included</PublishState>
-          <Visible>false</Visible>
-          <IncludeInVsix>true</IncludeInVsix>
-        </Content>
       </ItemGroup>
     </When>
     <When Condition="$(RuntimeIdentifier.StartsWith('win')) and $(RuntimeIdentifier.Contains('-arm64'))">
       <ItemGroup>
         <Content Include="@(CefRuntimeWinArm64Locales)">
           <Link>locales\%(RecursiveDir)%(FileName)%(Extension)</Link>
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-          <PublishState>Included</PublishState>
-          <Visible>false</Visible>
-          <IncludeInVsix>true</IncludeInVsix>
-        </Content>
-        <Content Include="@(CefRuntimeWinArm64SwiftShader)">
-          <Link>swiftshader\%(RecursiveDir)%(FileName)%(Extension)</Link>
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
           <PublishState>Included</PublishState>
           <Visible>false</Visible>

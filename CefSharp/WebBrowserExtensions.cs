@@ -3,6 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
@@ -20,6 +21,10 @@ namespace CefSharp
     /// </summary>
     public static class WebBrowserExtensions
     {
+        public const string BrowserNullExceptionString = "IBrowser instance is null. Browser has likely not finished initializing or is in the process of disposing.";
+        public const string BrowserHostNullExceptionString = "IBrowserHost instance is null. Browser has likely not finished initializing or is in the process of disposing.";
+        public const string FrameNullExceptionString = "IFrame instance is null. Browser has likely not finished initializing or is in the process of disposing.";
+
         #region Legacy Javascript Binding
         /// <summary>
         /// Registers a Javascript object in this specific browser instance.
@@ -62,11 +67,13 @@ namespace CefSharp
         /// </summary>
         /// <param name="browser">the ChromiumWebBrowser instance.</param>
         /// <returns> the main frame. </returns>
-        public static IFrame GetMainFrame(this IWebBrowser browser)
+        public static IFrame GetMainFrame(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            var cefBrowser = browser.BrowserCore;
+
+            ThrowExceptionIfBrowserNull(cefBrowser);
 
             return cefBrowser.MainFrame;
         }
@@ -76,11 +83,13 @@ namespace CefSharp
         /// </summary>
         /// <param name="browser">the ChromiumWebBrowser instance.</param>
         /// <returns>the focused frame.</returns>
-        public static IFrame GetFocusedFrame(this IWebBrowser browser)
+        public static IFrame GetFocusedFrame(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            var cefBrowser = browser.BrowserCore;
+
+            ThrowExceptionIfBrowserNull(cefBrowser);
 
             return cefBrowser.FocusedFrame;
         }
@@ -89,9 +98,22 @@ namespace CefSharp
         /// Execute Undo on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Undo(this IWebBrowser browser)
+        public static void Undo(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Undo();
+        }
+
+        /// <summary>
+        /// Execute Undo on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Undo(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -103,9 +125,22 @@ namespace CefSharp
         /// Execute Redo on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Redo(this IWebBrowser browser)
+        public static void Redo(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Redo();
+        }
+
+        /// <summary>
+        /// Execute Redo on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Redo(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -117,9 +152,22 @@ namespace CefSharp
         /// Execute Cut on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Cut(this IWebBrowser browser)
+        public static void Cut(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Cut();
+        }
+
+        /// <summary>
+        /// Execute Cut on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Cut(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -131,9 +179,22 @@ namespace CefSharp
         /// Execute Copy on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Copy(this IWebBrowser browser)
+        public static void Copy(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Copy();
+        }
+
+        /// <summary>
+        /// Execute Copy on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Copy(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -145,9 +206,22 @@ namespace CefSharp
         /// Execute Paste on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Paste(this IWebBrowser browser)
+        public static void Paste(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Paste();
+        }
+
+        /// <summary>
+        /// Execute Paste on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Paste(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -159,9 +233,22 @@ namespace CefSharp
         /// Execute Delete on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Delete(this IWebBrowser browser)
+        public static void Delete(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Delete();
+        }
+
+        /// <summary>
+        /// Execute Delete on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Delete(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -173,9 +260,22 @@ namespace CefSharp
         /// Execute SelectAll on the focused frame.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void SelectAll(this IWebBrowser browser)
+        public static void SelectAll(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetFocusedFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.SelectAll();
+        }
+
+        /// <summary>
+        /// Execute SelectAll on the focused frame.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void SelectAll(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -188,9 +288,23 @@ namespace CefSharp
         /// shown.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void ViewSource(this IWebBrowser browser)
+        public static void ViewSource(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetMainFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.ViewSource();
+        }
+
+        /// <summary>
+        /// Opens up a new program window (using the default text editor) where the source code of the currently displayed web page is
+        /// shown.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void ViewSource(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.MainFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -205,9 +319,25 @@ namespace CefSharp
         /// <returns>
         /// <see cref="Task{String}"/> that when executed returns the main frame source as a string.
         /// </returns>
-        public static Task<string> GetSourceAsync(this IWebBrowser browser)
+        public static Task<string> GetSourceAsync(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetMainFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            return browser.BrowserCore.GetSourceAsync();
+        }
+
+        /// <summary>
+        /// Retrieve the main frame's HTML source using a <see cref="Task{String}"/>.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <returns>
+        /// <see cref="Task{String}"/> that when executed returns the main frame source as a string.
+        /// </returns>
+        public static Task<string> GetSourceAsync(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -222,9 +352,25 @@ namespace CefSharp
         /// <returns>
         /// <see cref="Task{String}"/> that when executed returns the main frame display text as a string.
         /// </returns>
-        public static Task<string> GetTextAsync(this IWebBrowser browser)
+        public static Task<string> GetTextAsync(this IChromiumWebBrowserBase browser)
         {
-            using (var frame = browser.GetMainFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            return browser.BrowserCore.GetTextAsync();
+        }
+
+        /// <summary>
+        /// Retrieve the main frame's display text using a <see cref="Task{String}"/>.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <returns>
+        /// <see cref="Task{String}"/> that when executed returns the main frame display text as a string.
+        /// </returns>
+        public static Task<string> GetTextAsync(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.FocusedFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -237,9 +383,23 @@ namespace CefSharp
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="url">url to download</param>
-        public static void StartDownload(this IWebBrowser browser, string url)
+        public static void StartDownload(this IChromiumWebBrowserBase browser, string url)
         {
-            var host = browser.GetBrowserHost();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.StartDownload(url);
+        }
+
+        /// <summary>
+        /// Download the file at url using <see cref="IDownloadHandler"/>. 
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <param name="url">url to download</param>
+        public static void StartDownload(this IBrowser browser, string url)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
 
             ThrowExceptionIfBrowserHostNull(host);
 
@@ -247,29 +407,32 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// See <see cref="IWebBrowser.LoadUrlAsync(string, SynchronizationContext)"/> for details
+        /// See <see cref="IChromiumWebBrowserBase.LoadUrlAsync(string)"/> for details
         /// </summary>
         /// <param name="chromiumWebBrowser">ChromiumWebBrowser instance (cannot be null)</param>
         /// <summary>
         /// Load the <paramref name="url"/> in the main frame of the browser
         /// </summary>
         /// <param name="url">url to load</param>
-        /// <param name="ctx">SynchronizationContext to execute the continuation on, if null then the ThreadPool will be used.</param>
-        /// <returns>See <see cref="IWebBrowser.LoadUrlAsync(string, SynchronizationContext)"/> for details</returns>
-        public static Task<LoadUrlAsyncResponse> LoadUrlAsync(IWebBrowser chromiumWebBrowser, string url = null, SynchronizationContext ctx = null)
+        /// <returns>See <see cref="IChromiumWebBrowserBase.LoadUrlAsync(string)"/> for details</returns>
+        public static Task<LoadUrlAsyncResponse> LoadUrlAsync(IChromiumWebBrowserBase chromiumWebBrowser, string url)
         {
-            var tcs = new TaskCompletionSource<LoadUrlAsyncResponse>();
+            ThrowExceptionIfChromiumWebBrowserDisposed(chromiumWebBrowser);
+
+            if (string.IsNullOrEmpty(url))
+            {
+                throw new ArgumentNullException(nameof(url));
+            }
+
+            var tcs = new TaskCompletionSource<LoadUrlAsyncResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
 
             EventHandler<LoadErrorEventArgs> loadErrorHandler = null;
             EventHandler<LoadingStateChangedEventArgs> loadingStateChangeHandler = null;
 
             loadErrorHandler = (sender, args) =>
             {
-                //Ignore Aborted
-                //Currently invalid SSL certificates which aren't explicitly allowed
-                //end up with CefErrorCode.Aborted, I've created the following PR
-                //in the hopes of getting this fixed.
-                //https://bitbucket.org/chromiumembedded/cef/pull-requests/373
+                //Actions that trigger a download will raise an aborted error.
+                //Generally speaking Aborted is safe to ignore
                 if (args.ErrorCode == CefErrorCode.Aborted)
                 {
                     return;
@@ -281,20 +444,10 @@ namespace CefSharp
                 chromiumWebBrowser.LoadError -= loadErrorHandler;
                 chromiumWebBrowser.LoadingStateChanged -= loadingStateChangeHandler;
 
-                if (ctx == null)
-                {
-                    //Ensure our continuation is executed on the ThreadPool
-                    //For the .Net Core implementation we could use
-                    //TaskCreationOptions.RunContinuationsAsynchronously
-                    tcs.TrySetResultAsync(new LoadUrlAsyncResponse(args.ErrorCode, -1));
-                }
-                else
-                {
-                    ctx.Post(new SendOrPostCallback((o) =>
-                    {
-                        tcs.TrySetResult(new LoadUrlAsyncResponse(args.ErrorCode, -1));
-                    }), null);
-                }
+                //Ensure our continuation is executed on the ThreadPool
+                //For the .Net Core implementation we could use
+                //TaskCreationOptions.RunContinuationsAsynchronously
+                tcs.TrySetResult(new LoadUrlAsyncResponse(args.ErrorCode, -1));
             };
 
             loadingStateChangeHandler = (sender, args) =>
@@ -322,36 +475,249 @@ namespace CefSharp
                         statusCode = -1;
                     }
 
-                    if (ctx == null)
-                    {
-                        //Ensure our continuation is executed on the ThreadPool
-                        //For the .Net Core implementation we could use
-                        //TaskCreationOptions.RunContinuationsAsynchronously
-                        tcs.TrySetResultAsync(new LoadUrlAsyncResponse(CefErrorCode.None, statusCode));
-                    }
-                    else
-                    {
-                        ctx.Post(new SendOrPostCallback((o) =>
-                        {
-                            tcs.TrySetResult(new LoadUrlAsyncResponse(CefErrorCode.None, statusCode));
-                        }), null);
-                    }
+                    //Ensure our continuation is executed on the ThreadPool
+                    //For the .Net Core implementation we could use
+                    //TaskCreationOptions.RunContinuationsAsynchronously
+                    tcs.TrySetResult(new LoadUrlAsyncResponse(statusCode == -1 ? CefErrorCode.Failed : CefErrorCode.None, statusCode));
                 }
             };
 
             chromiumWebBrowser.LoadError += loadErrorHandler;
             chromiumWebBrowser.LoadingStateChanged += loadingStateChangeHandler;
 
-            if (!string.IsNullOrEmpty(url))
-            {
-                chromiumWebBrowser.Load(url);
-            }
+            chromiumWebBrowser.LoadUrl(url);
 
             return tcs.Task;
         }
 
         /// <summary>
-        /// Execute some Javascript code in the context of this WebBrowser. As the method name implies, the script will be executed
+        /// This resolves when the browser navigates to a new URL or reloads.
+        /// It is useful for when you run code which will indirectly cause the browser to navigate.
+        /// A common use case would be when executing javascript that results in a navigation. e.g. clicks a link
+        /// This must be called before executing the action that navigates the browser. It may not resolve correctly
+        /// if called after.
+        /// </summary>
+        /// <remarks>
+        /// Usage of the <c>History API</c> <see href="https://developer.mozilla.org/en-US/docs/Web/API/History_API"/> to change the URL is considered a navigation
+        /// </remarks>
+        /// <param name="chromiumWebBrowser">ChromiumWebBrowser instance (cannot be null)</param>
+        /// <param name="timeout">optional timeout, if not specified defaults to five(5) seconds.</param>
+        /// <param name="cancellationToken">optional CancellationToken</param>
+        /// <returns>Task which resolves when <see cref="IChromiumWebBrowserBase.LoadingStateChanged"/> has been called with <see cref="LoadingStateChangedEventArgs.IsLoading"/> false.
+        /// or when <see cref="IChromiumWebBrowserBase.LoadError"/> is called to signify a load failure.
+        /// </returns>
+        /// <example>
+        /// <code>
+        /// <![CDATA[
+        /// string script = "document.getElementsByTagName('a')[0].click();";
+        /// await Task.WhenAll(
+        ///     chromiumWebBrowser.WaitForNavigationAsync(),
+        ///     chromiumWebBrowser.EvaluateScriptAsync(script));
+        /// ]]>
+        /// </code>
+        /// </example>
+        public static async Task<WaitForNavigationAsyncResponse> WaitForNavigationAsync(IChromiumWebBrowserBase chromiumWebBrowser, TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            ThrowExceptionIfChromiumWebBrowserDisposed(chromiumWebBrowser);
+
+            var tcs = new TaskCompletionSource<WaitForNavigationAsyncResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            EventHandler<LoadErrorEventArgs> loadErrorHandler = null;
+            EventHandler<LoadingStateChangedEventArgs> loadingStateChangeHandler = null;
+
+            loadErrorHandler = (sender, args) =>
+            {
+                //Actions that trigger a download will raise an aborted error.
+                //Generally speaking Aborted is safe to ignore
+                if (args.ErrorCode == CefErrorCode.Aborted)
+                {
+                    return;
+                }
+
+                //If LoadError was called then we'll remove both our handlers
+                //as we won't need to capture LoadingStateChanged, we know there
+                //was an error
+                chromiumWebBrowser.LoadError -= loadErrorHandler;
+                chromiumWebBrowser.LoadingStateChanged -= loadingStateChangeHandler;
+
+                //Ensure our continuation is executed on the ThreadPool
+                //For the .Net Core implementation we could use
+                //TaskCreationOptions.RunContinuationsAsynchronously
+                tcs.TrySetResult(new WaitForNavigationAsyncResponse(args.ErrorCode, -1));
+            };
+
+            loadingStateChangeHandler = (sender, args) =>
+            {
+                //Wait for while page to finish loading not just the first frame
+                if (!args.IsLoading)
+                {
+                    //If LoadingStateChanged was called then we'll remove both our handlers
+                    //as LoadError won't be called, our site has loaded with a valid HttpStatusCode
+                    //HttpStatusCodes can still be for example 404, this is considered a successful request,
+                    //the server responded, it just didn't have the page you were after.
+                    chromiumWebBrowser.LoadError -= loadErrorHandler;
+                    chromiumWebBrowser.LoadingStateChanged -= loadingStateChangeHandler;
+
+                    var host = args.Browser.GetHost();
+
+                    var navEntry = host?.GetVisibleNavigationEntry();
+
+                    int statusCode = navEntry?.HttpStatusCode ?? -1;
+
+                    //By default 0 is some sort of error, we map that to -1
+                    //so that it's clearer that something failed.
+                    if (statusCode == 0)
+                    {
+                        statusCode = -1;
+                    }
+
+                    //Ensure our continuation is executed on the ThreadPool
+                    //For the .Net Core implementation we could use
+                    //TaskCreationOptions.RunContinuationsAsynchronously
+                    tcs.TrySetResult(new WaitForNavigationAsyncResponse(statusCode == -1 ? CefErrorCode.Failed : CefErrorCode.None, statusCode));
+                }
+            };
+
+            chromiumWebBrowser.LoadError += loadErrorHandler;
+            chromiumWebBrowser.LoadingStateChanged += loadingStateChangeHandler;
+
+            try
+            {
+                return await TaskTimeoutExtensions.WaitAsync(tcs.Task, timeout ?? TimeSpan.FromSeconds(5), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                chromiumWebBrowser.LoadError -= loadErrorHandler;
+                chromiumWebBrowser.LoadingStateChanged -= loadingStateChangeHandler;
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Waits for a DOM element specified by the <paramref name="selector"/> string to be added to or removed from the DOM.
+        /// A simplified version of Puppeteer WaitForSelector. Uses a MutationObserver to wait for the element to become added or removed.
+        /// </summary>
+        /// <param name="chromiumWebBrowser">ChromiumWebBrowser instance (cannot be null)</param>
+        /// <param name="selector">querySelector for the element e.g. #idOfMyElement</param>
+        /// <param name="timeout">timeout</param>
+        /// <param name="removed">
+        /// (Optional) if true  waits for element to be removed from the DOM. If the querySelector immediately resolves
+        /// to null then the element is considered removed. If false (default) waits for the element to be added to the DOM.
+        /// </param>
+        /// <returns>A Task that resolves when element specified by selector string is added to or removed from the DOM.</returns>
+        /// <example>
+        /// <code>
+        /// <![CDATA[
+        /// string script = "const newDiv = document.createElement('div'); newDiv.id = 'myElement'; document.body.append(newDiv);";
+        /// await Task.WhenAll(
+        ///     browser.WaitForSelectorAsync("#myElement");,
+        ///     chromiumWebBrowser.EvaluateScriptAsync(script));
+        /// ]]>
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// This function is typically used in conjunction with javascript that directly or indirectly adds/removes an element from the DOM.
+        /// Unlike the puppeteer version navigations aren't handled internally, the method will throw a <see cref="TimeoutException"/> if a navigation
+        /// occurs whilst waiting to resolve.
+        /// </remarks>
+        public static async Task<WaitForSelectorAsyncResponse> WaitForSelectorAsync(this IWebBrowser chromiumWebBrowser, string selector, TimeSpan? timeout = null, bool removed = false)
+        {
+            const string waitForSelectorFunction = @"
+            async function waitForSelectorFunction(timeout, selector, waitForRemoved)
+            {
+                let timedOut = false;
+                if (timeout)
+                    setTimeout(() => (timedOut = true), timeout);
+
+                return await pollMutation();
+
+                async function pollMutation() {
+                    const success = await mutationSelector(selector, waitForRemoved);
+                    if (success)
+                        return Promise.resolve(success);
+                    let fulfill;
+                    const result = new Promise((x) => (fulfill = x));
+                    const observer = new MutationObserver(async () => {
+                        if (timedOut) {
+                            observer.disconnect();
+                            fulfill();
+                        }
+                        const success = await mutationSelector(selector, waitForRemoved);
+                        if (success) {
+                            observer.disconnect();
+                            fulfill(success);
+                        }
+                    });
+                    observer.observe(document, {
+                        childList: true,
+                        subtree: true,
+                        attributes: false,
+                    });
+                    return result;
+                }
+
+                async function mutationSelector(selector, waitForRemoved)
+                {
+                    const element = document.querySelector(selector);
+
+                    if (!element)
+                        return waitForRemoved;
+
+                    if(waitForRemoved && element)
+                        return null;
+                    
+                    let obj = {};
+                    obj.id = element.id;
+                    obj.nodeValue = element.nodeValue;
+                    obj.localName = element.localName;
+                    obj.tagName = element.tagName;
+
+                    return obj;
+                }
+            };";
+
+            if(chromiumWebBrowser == null)
+            {
+                throw new ArgumentNullException(nameof(chromiumWebBrowser));
+            }
+
+            if(string.IsNullOrEmpty(selector))
+            {
+                throw new ArgumentException($"{nameof(selector)} cannot be null or empty.");
+            }
+
+            var execute = GetScriptForJavascriptMethodWithArgs("waitForSelectorFunction", new object[] { timeout.HasValue ? timeout.Value.Milliseconds : 5000, selector, removed });
+            var query = @"return (async () => {" + Environment.NewLine + waitForSelectorFunction + Environment.NewLine + "return " + execute + Environment.NewLine + "})(); ";
+
+            var response = chromiumWebBrowser.EvaluateScriptAsPromiseAsync(query);
+
+            var timeoutResponse = await  TaskTimeoutExtensions.WaitAsync(response, timeout ?? TimeSpan.FromSeconds(5)).ConfigureAwait(continueOnCapturedContext:false);
+
+            if(timeoutResponse.Success)
+            {
+                if(removed)
+                {
+                    if ((bool)timeoutResponse.Result)
+                    {
+                        return new WaitForSelectorAsyncResponse(string.Empty, string.Empty, false);
+                    }
+
+                    return new WaitForSelectorAsyncResponse(false, $"Failed to detect DOM change for removed element via selector {selector}");
+                }
+
+                var element = (IDictionary<string, object>)timeoutResponse.Result;
+                var id = element["id"].ToString();
+                var tagName = element["tagName"].ToString();
+
+                return new WaitForSelectorAsyncResponse(id, tagName, true);
+            }
+
+            return new WaitForSelectorAsyncResponse(false, timeoutResponse.Message);
+        }
+
+        /// <summary>
+        /// Execute Javascript code in the context of this Browser. As the method name implies, the script will be executed
         /// asynchronously, and the method therefore returns before the script has actually been executed. This simple helper extension
         /// will encapsulate params in single quotes (unless int, uint, etc)
         /// </summary>
@@ -359,21 +725,41 @@ namespace CefSharp
         /// <param name="methodName">The javascript method name to execute.</param>
         /// <param name="args">the arguments to be passed as params to the method. Args are encoded using
         /// <see cref="EncodeScriptParam"/>, you can provide a custom implementation if you require one.</param>
-        public static void ExecuteScriptAsync(this IWebBrowser browser, string methodName, params object[] args)
+        public static void ExecuteScriptAsync(this IChromiumWebBrowserBase browser, string methodName, params object[] args)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.ExecuteScriptAsync(methodName, args);
+        }
+
+        /// <summary>
+        /// Execute Javascript code in the context of this WebBrowser. As the method name implies, the script will be executed
+        /// asynchronously, and the method therefore returns before the script has actually been executed. This simple helper extension
+        /// will encapsulate params in single quotes (unless int, uint, etc)
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <param name="methodName">The javascript method name to execute.</param>
+        /// <param name="args">the arguments to be passed as params to the method. Args are encoded using
+        /// <see cref="EncodeScriptParam"/>, you can provide a custom implementation if you require one.</param>
+        public static void ExecuteScriptAsync(this IBrowser browser, string methodName, params object[] args)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
             var script = GetScriptForJavascriptMethodWithArgs(methodName, args);
 
             browser.ExecuteScriptAsync(script);
         }
 
         /// <summary>
-        /// Execute some Javascript code in the context of this WebBrowser. As the method name implies, the script will be executed
+        /// Execute Javascript in the context of this Browsers Main Frame. As the method name implies, the script will be executed
         /// asynchronously, and the method therefore returns before the script has actually been executed.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="script">The Javascript code that should be executed.</param>
-        public static void ExecuteScriptAsync(this IWebBrowser browser, string script)
+        public static void ExecuteScriptAsync(this IChromiumWebBrowserBase browser, string script)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             using (var frame = browser.GetMainFrame())
             {
                 ThrowExceptionIfFrameNull(frame);
@@ -383,7 +769,25 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Execute Javascript code in the context of this WebBrowser. This extension method uses the LoadingStateChanged event. As the
+        /// Execute Javascript in the context of this Browser Main Frame. As the method name implies, the script will be executed
+        /// asynchronously, and the method therefore returns before the script has actually been executed.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <param name="script">The Javascript code that should be executed.</param>
+        public static void ExecuteScriptAsync(this IBrowser browser, string script)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.MainFrame)
+            {
+                ThrowExceptionIfFrameNull(frame);
+
+                frame.ExecuteJavaScriptAsync(script);
+            }
+        }
+
+        /// <summary>
+        /// Execute Javascript code in the context of this Browsers Main Frame. This extension method uses the LoadingStateChanged event. As the
         /// method name implies, the script will be executed asynchronously, and the method therefore returns before the script has
         /// actually been executed.
         /// </summary>
@@ -395,15 +799,17 @@ namespace CefSharp
         /// <param name="webBrowser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="script">The Javascript code that should be executed.</param>
         /// <param name="oneTime">(Optional) The script will only be executed on first page load, subsequent page loads will be ignored.</param>
-        public static void ExecuteScriptAsyncWhenPageLoaded(this IWebBrowser webBrowser, string script, bool oneTime = true)
+        public static void ExecuteScriptAsyncWhenPageLoaded(this IChromiumWebBrowserBase webBrowser, string script, bool oneTime = true)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(webBrowser);
+
             var useLoadingStateChangedEventHandler = webBrowser.IsBrowserInitialized == false || oneTime == false;
 
             //Browser has been initialized, we check if there is a valid document and we're not loading
             if (webBrowser.IsBrowserInitialized)
             {
                 //CefBrowser wrapper
-                var browser = webBrowser.GetBrowser();
+                var browser = webBrowser.BrowserCore;
                 if (browser.HasDocument && browser.IsLoading == false)
                 {
                     webBrowser.ExecuteScriptAsync(script);
@@ -446,9 +852,26 @@ namespace CefSharp
         /// <param name="url">url to load</param>
         /// <param name="postDataBytes">post data as byte array</param>
         /// <param name="contentType">(Optional) if set the Content-Type header will be set</param>
-        public static void LoadUrlWithPostData(this IWebBrowser browser, string url, byte[] postDataBytes, string contentType = null)
+        public static void LoadUrlWithPostData(this IChromiumWebBrowserBase browser, string url, byte[] postDataBytes, string contentType = null)
         {
-            using (var frame = browser.GetMainFrame())
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.LoadUrlWithPostData(url, postDataBytes, contentType);
+        }
+
+        /// <summary>
+        /// Creates a new instance of IRequest with the specified Url and Method = POST and then calls
+        /// <see cref="IFrame.LoadRequest(IRequest)"/>.
+        /// </summary>
+        /// <param name="browser">browser this method extends</param>
+        /// <param name="url">url to load</param>
+        /// <param name="postDataBytes">post data as byte array</param>
+        /// <param name="contentType">(Optional) if set the Content-Type header will be set</param>
+        public static void LoadUrlWithPostData(this IBrowser browser, string url, byte[] postDataBytes, string contentType = null)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            using (var frame = browser.MainFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -501,11 +924,13 @@ namespace CefSharp
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="html">Html to load as data uri.</param>
         /// <param name="base64Encode">(Optional) if true the html string will be base64 encoded using UTF8 encoding.</param>
-        public static void LoadHtml(this IWebBrowser browser, string html, bool base64Encode = false)
+        public static void LoadHtml(this IChromiumWebBrowserBase browser, string html, bool base64Encode = false)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             var htmlString = new HtmlString(html, base64Encode);
 
-            browser.Load(htmlString.ToDataUriString());
+            browser.LoadUrl(htmlString.ToDataUriString());
         }
 
         /// <summary>
@@ -541,6 +966,8 @@ namespace CefSharp
         /// </returns>
         public static bool LoadHtml(this IWebBrowser browser, string html, string url, Encoding encoding, bool oneTimeUse = false)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             if (browser.ResourceRequestHandlerFactory == null)
             {
                 browser.ResourceRequestHandlerFactory = new ResourceRequestHandlerFactory();
@@ -576,6 +1003,8 @@ namespace CefSharp
         public static void RegisterResourceHandler(this IWebBrowser browser, string url, Stream stream, string mimeType = ResourceHandler.DefaultMimeType,
             bool oneTimeUse = false)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             if (browser.ResourceRequestHandlerFactory == null)
             {
                 browser.ResourceRequestHandlerFactory = new ResourceRequestHandlerFactory();
@@ -605,6 +1034,8 @@ namespace CefSharp
         /// <param name="url">the url of the resource to unregister.</param>
         public static void UnRegisterResourceHandler(this IWebBrowser browser, string url)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             var handler = browser.ResourceRequestHandlerFactory as ResourceRequestHandlerFactory;
 
             if (handler == null)
@@ -619,47 +1050,76 @@ namespace CefSharp
         /// Stops loading the current page.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Stop(this IWebBrowser browser)
+        public static void Stop(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.ThrowExceptionIfBrowserNull();
-
-            cefBrowser.StopLoad();
+            browser.BrowserCore.Stop();
         }
 
         /// <summary>
-        /// Navigates back, must check <see cref="IWebBrowser.CanGoBack"/> before calling this method.
+        /// Stops loading the current page.
         /// </summary>
-        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Back(this IWebBrowser browser)
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Stop(this IBrowser browser)
         {
-            var cefBrowser = browser.GetBrowser();
+            ThrowExceptionIfBrowserNull(browser);
 
-            cefBrowser.ThrowExceptionIfBrowserNull();
-
-            cefBrowser.GoBack();
+            browser.StopLoad();
         }
 
         /// <summary>
-        /// Navigates forward, must check <see cref="IWebBrowser.CanGoForward"/> before calling this method.
+        /// Navigates back, must check <see cref="IChromiumWebBrowserBase.CanGoBack"/> before calling this method.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Forward(this IWebBrowser browser)
+        public static void Back(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            browser.BrowserCore.Back();
+        }
 
-            cefBrowser.GoForward();
+        /// <summary>
+        /// Navigates back, must check <see cref="IBrowser.CanGoBack"/> before calling this method.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Back(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            browser.GoBack();
+        }
+
+        /// <summary>
+        /// Navigates forward, must check <see cref="IChromiumWebBrowserBase.CanGoForward"/> before calling this method.
+        /// </summary>
+        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
+        public static void Forward(this IChromiumWebBrowserBase browser)
+        {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Forward();
+        }
+
+        /// <summary>
+        /// Navigates forward, must check <see cref="IBrowser.CanGoForward"/> before calling this method.
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        public static void Forward(this IBrowser browser)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            browser.GoForward();
         }
 
         /// <summary>
         /// Reloads the page being displayed. This method will use data from the browser's cache, if available.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Reload(this IWebBrowser browser)
+        public static void Reload(this IChromiumWebBrowserBase browser)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             browser.Reload(false);
         }
 
@@ -670,17 +1130,29 @@ namespace CefSharp
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="ignoreCache"><c>true</c> A reload is performed ignoring browser cache; <c>false</c> A reload is performed using
         /// files from the browser cache, if available.</param>
-        public static void Reload(this IWebBrowser browser, bool ignoreCache)
+        public static void Reload(this IChromiumWebBrowserBase browser, bool ignoreCache)
         {
-            var cefBrowser = browser.GetBrowser();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.ThrowExceptionIfBrowserNull();
-
-            cefBrowser.Reload(ignoreCache);
+            browser.BrowserCore.Reload(ignoreCache);
         }
 
         /// <summary>
-        /// Gets the default cookie manager associated with the IWebBrowser.
+        /// Reloads the page being displayed, optionally ignoring the cache (which means the whole page including all .css, .js etc.
+        /// resources will be re-fetched).
+        /// </summary>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <param name="ignoreCache"><c>true</c> A reload is performed ignoring browser cache; <c>false</c> A reload is performed using
+        /// files from the browser cache, if available.</param>
+        public static void Reload(this IBrowser browser, bool ignoreCache = false)
+        {
+            ThrowExceptionIfBrowserNull(browser);
+
+            browser.Reload(ignoreCache);
+        }
+
+        /// <summary>
+        /// Gets the default cookie manager associated with the <see cref="IChromiumWebBrowserBase"/> instance.
         /// </summary>
         /// <exception cref="Exception">Thrown when an exception error condition occurs.</exception>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
@@ -689,8 +1161,10 @@ namespace CefSharp
         /// <returns>
         /// Cookie Manager.
         /// </returns>
-        public static ICookieManager GetCookieManager(this IWebBrowser browser, ICompletionCallback callback = null)
+        public static ICookieManager GetCookieManager(this IChromiumWebBrowserBase browser, ICompletionCallback callback = null)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             var host = browser.GetBrowserHost();
 
             ThrowExceptionIfBrowserHostNull(host);
@@ -706,15 +1180,36 @@ namespace CefSharp
         }
 
         /// <summary>
+        /// Gets the RequestContext associated with the <see cref="IChromiumWebBrowserBase"/> instance.
+        /// </summary>
+        /// <exception cref="Exception">Thrown when an exception error condition occurs.</exception>
+        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <returns>
+        /// RequestContext
+        /// </returns>
+        public static IRequestContext GetRequestContext(this IChromiumWebBrowserBase browser)
+        {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            var host = browser.GetBrowserHost();
+
+            ThrowExceptionIfBrowserHostNull(host);
+
+            return host.RequestContext;
+        }
+
+        /// <summary>
         /// Asynchronously gets the current Zoom Level.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <returns>
         /// An asynchronous result that yields the zoom level.
         /// </returns>
-        public static Task<double> GetZoomLevelAsync(this IBrowser cefBrowser)
+        public static Task<double> GetZoomLevelAsync(this IBrowser browser)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             return host.GetZoomLevelAsync();
@@ -727,10 +1222,11 @@ namespace CefSharp
         /// <returns>
         /// An asynchronous result that yields the zoom level.
         /// </returns>
-        public static Task<double> GetZoomLevelAsync(this IWebBrowser browser)
+        public static Task<double> GetZoomLevelAsync(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
-            return cefBrowser.GetZoomLevelAsync();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            return browser.BrowserCore.GetZoomLevelAsync();
         }
 
         /// <summary>
@@ -740,13 +1236,13 @@ namespace CefSharp
         /// If called on the CEF UI thread the change will be applied immediately. Otherwise, the change will be applied asynchronously
         /// on the CEF UI thread. The CEF UI thread is different to the WPF/WinForms UI Thread.
         /// </remarks>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="zoomLevel">zoom level.</param>
-        public static void SetZoomLevel(this IBrowser cefBrowser, double zoomLevel)
+        public static void SetZoomLevel(this IBrowser browser, double zoomLevel)
         {
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfBrowserNull(browser);
 
-            var host = cefBrowser.GetHost();
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.SetZoomLevel(zoomLevel);
@@ -761,56 +1257,58 @@ namespace CefSharp
         /// </remarks>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="zoomLevel">zoom level.</param>
-        public static void SetZoomLevel(this IWebBrowser browser, double zoomLevel)
+        public static void SetZoomLevel(this IChromiumWebBrowserBase browser, double zoomLevel)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.SetZoomLevel(zoomLevel);
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.SetZoomLevel(zoomLevel);
         }
 
         /// <summary>
         /// Search for text within the current page.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
-        /// <param name="identifier">Can be used in can conjunction with searchText to have multiple searches running simultaneously.</param>
-        /// <param name="searchText">search text.</param>
-        /// <param name="forward">indicates whether to search forward or backward within the page.</param>
-        /// <param name="matchCase">indicates whether the search should be case-sensitive.</param>
-        /// <param name="findNext">indicates whether this is the first request or a follow-up.</param>
-        public static void Find(this IBrowser cefBrowser, int identifier, string searchText, bool forward, bool matchCase, bool findNext)
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
+        /// <param name="searchText">text to search for</param>
+        /// <param name="forward">indicates whether to search forward or backward within the page</param>
+        /// <param name="matchCase">indicates whether the search should be case-sensitive</param>
+        /// <param name="findNext">indicates whether this is the first request or a follow-up</param>
+        /// <remarks>The <see cref="IFindHandler"/> instance, if any, will be called to report find results.</remarks>
+        public static void Find(this IBrowser browser, string searchText, bool forward, bool matchCase, bool findNext)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
-            host.Find(identifier, searchText, forward, matchCase, findNext);
+            host.Find(searchText, forward, matchCase, findNext);
         }
 
         /// <summary>
         /// Search for text within the current page.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        /// <param name="identifier">Can be used in can conjunction with searchText to have multiple searches running simultaneously.</param>
-        /// <param name="searchText">search text.</param>
-        /// <param name="forward">indicates whether to search forward or backward within the page.</param>
-        /// <param name="matchCase">indicates whether the search should be case-sensitive.</param>
-        /// <param name="findNext">indicates whether this is the first request or a follow-up.</param>
-        public static void Find(this IWebBrowser browser, int identifier, string searchText, bool forward, bool matchCase, bool findNext)
+        /// <param name="searchText">text to search for</param>
+        /// <param name="forward">indicates whether to search forward or backward within the page</param>
+        /// <param name="matchCase">indicates whether the search should be case-sensitive</param>
+        /// <param name="findNext">indicates whether this is the first request or a follow-up</param>
+        /// <remarks>The <see cref="IFindHandler"/> instance, if any, will be called to report find results.</remarks>
+        public static void Find(this IChromiumWebBrowserBase browser, string searchText, bool forward, bool matchCase, bool findNext)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.Find(identifier, searchText, forward, matchCase, findNext);
+            browser.BrowserCore.Find(searchText, forward, matchCase, findNext);
         }
 
         /// <summary>
         /// Cancel all searches that are currently going on.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
         /// <param name="clearSelection">clear the current search selection.</param>
-        public static void StopFinding(this IBrowser cefBrowser, bool clearSelection)
+        public static void StopFinding(this IBrowser browser, bool clearSelection)
         {
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfBrowserNull(browser);
 
-            var host = cefBrowser.GetHost();
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.StopFinding(clearSelection);
@@ -821,40 +1319,54 @@ namespace CefSharp
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="clearSelection">clear the current search selection.</param>
-        public static void StopFinding(this IWebBrowser browser, bool clearSelection)
+        public static void StopFinding(this IChromiumWebBrowserBase browser, bool clearSelection)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.StopFinding(clearSelection);
+            browser.BrowserCore.StopFinding(clearSelection);
         }
 
         /// <summary>
         /// Opens a Print Dialog which if used (can be user cancelled) will print the browser contents.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Print(this IBrowser cefBrowser)
+        /// <param name="browser">The browser instance this method extends.</param>
+        public static void Print(this IBrowser browser)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.Print();
         }
 
         /// <summary>
+        /// Opens a Print Dialog which if used (can be user cancelled) will print the browser contents.
+        /// </summary>
+        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
+        public static void Print(this IChromiumWebBrowserBase browser)
+        {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.Print();
+        }
+
+        /// <summary>
         /// Asynchronously prints the current browser contents to the PDF file specified. The caller is responsible for deleting the file
         /// when done.
         /// </summary>
-        /// <param name="cefBrowser">The <see cref="IBrowser"/> object this method extends.</param>
+        /// <param name="browser">The <see cref="IBrowser"/> object this method extends.</param>
         /// <param name="path">Output file location.</param>
         /// <param name="settings">(Optional) Print Settings.</param>
         /// <returns>
         /// A task that represents the asynchronous print operation. The result is true on success or false on failure to generate the
         /// Pdf.
         /// </returns>
-        public static Task<bool> PrintToPdfAsync(this IBrowser cefBrowser, string path, PdfPrintSettings settings = null)
+        public static Task<bool> PrintToPdfAsync(this IBrowser browser, string path, PdfPrintSettings settings = null)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             var callback = new TaskPrintToPdfCallback();
@@ -864,18 +1376,6 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Opens a Print Dialog which if used (can be user cancelled) will print the browser contents.
-        /// </summary>
-        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void Print(this IWebBrowser browser)
-        {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
-
-            cefBrowser.Print();
-        }
-
-        /// <summary>
         /// Asynchronously prints the current browser contents to the PDF file specified. The caller is responsible for deleting the file
         /// when done.
         /// </summary>
@@ -886,24 +1386,25 @@ namespace CefSharp
         /// A task that represents the asynchronous print operation. The result is true on success or false on failure to generate the
         /// Pdf.
         /// </returns>
-        public static Task<bool> PrintToPdfAsync(this IWebBrowser browser, string path, PdfPrintSettings settings = null)
+        public static Task<bool> PrintToPdfAsync(this IChromiumWebBrowserBase browser, string path, PdfPrintSettings settings = null)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            return cefBrowser.PrintToPdfAsync(path, settings);
+            return browser.BrowserCore.PrintToPdfAsync(path, settings);
         }
 
         /// <summary>
         /// Open developer tools in its own window.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
         /// <param name="windowInfo">(Optional) window info used for showing dev tools.</param>
         /// <param name="inspectElementAtX">(Optional) x coordinate (used for inspectElement)</param>
         /// <param name="inspectElementAtY">(Optional) y coordinate (used for inspectElement)</param>
-        public static void ShowDevTools(this IBrowser cefBrowser, IWindowInfo windowInfo = null, int inspectElementAtX = 0, int inspectElementAtY = 0)
+        public static void ShowDevTools(this IBrowser browser, IWindowInfo windowInfo = null, int inspectElementAtX = 0, int inspectElementAtY = 0)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.ShowDevTools(windowInfo, inspectElementAtX, inspectElementAtY);
@@ -916,20 +1417,22 @@ namespace CefSharp
         /// <param name="windowInfo">(Optional) window info used for showing dev tools.</param>
         /// <param name="inspectElementAtX">(Optional) x coordinate (used for inspectElement)</param>
         /// <param name="inspectElementAtY">(Optional) y coordinate (used for inspectElement)</param>
-        public static void ShowDevTools(this IWebBrowser browser, IWindowInfo windowInfo = null, int inspectElementAtX = 0, int inspectElementAtY = 0)
+        public static void ShowDevTools(this IChromiumWebBrowserBase browser, IWindowInfo windowInfo = null, int inspectElementAtX = 0, int inspectElementAtY = 0)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
-            cefBrowser.ShowDevTools(windowInfo, inspectElementAtX, inspectElementAtY);
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.ShowDevTools(windowInfo, inspectElementAtX, inspectElementAtY);
         }
 
         /// <summary>
         /// Explicitly close the developer tools window if one exists for this browser instance.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void CloseDevTools(this IBrowser cefBrowser)
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
+        public static void CloseDevTools(this IBrowser browser)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.CloseDevTools();
@@ -939,21 +1442,23 @@ namespace CefSharp
         /// Explicitly close the developer tools window if one exists for this browser instance.
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        public static void CloseDevTools(this IWebBrowser browser)
+        public static void CloseDevTools(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
-            cefBrowser.CloseDevTools();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.CloseDevTools();
         }
 
         /// <summary>
         /// If a misspelled word is currently selected in an editable node calling this method will replace it with the specified word.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
         /// <param name="word">The new word that will replace the currently selected word.</param>
-        public static void ReplaceMisspelling(this IBrowser cefBrowser, string word)
+        public static void ReplaceMisspelling(this IBrowser browser, string word)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.ReplaceMisspelling(word);
@@ -964,25 +1469,38 @@ namespace CefSharp
         /// </summary>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
         /// <param name="word">The new word that will replace the currently selected word.</param>
-        public static void ReplaceMisspelling(this IWebBrowser browser, string word)
+        public static void ReplaceMisspelling(this IChromiumWebBrowserBase browser, string word)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.ReplaceMisspelling(word);
+            browser.BrowserCore.ReplaceMisspelling(word);
         }
 
         /// <summary>
         /// Add the specified word to the spelling dictionary.
         /// </summary>
-        /// <param name="cefBrowser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
         /// <param name="word">The new word that will be added to the dictionary.</param>
-        public static void AddWordToDictionary(this IBrowser cefBrowser, string word)
+        public static void AddWordToDictionary(this IBrowser browser, string word)
         {
-            var host = cefBrowser.GetHost();
+            ThrowExceptionIfBrowserNull(browser);
+
+            var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
 
             host.AddWordToDictionary(word);
+        }
+
+        /// <summary>
+        /// Add the specified word to the spelling dictionary.
+        /// </summary>
+        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="word">The new word that will be added to the dictionary.</param>
+        public static void AddWordToDictionary(this IChromiumWebBrowserBase browser, string word)
+        {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            browser.BrowserCore.AddWordToDictionary(word);
         }
 
         /// <summary>
@@ -992,24 +1510,9 @@ namespace CefSharp
         /// <returns>
         /// browserHost or null.
         /// </returns>
-        public static IBrowserHost GetBrowserHost(this IWebBrowser browser)
+        public static IBrowserHost GetBrowserHost(this IChromiumWebBrowserBase browser)
         {
-            var cefBrowser = browser.GetBrowser();
-
-            return cefBrowser == null ? null : cefBrowser.GetHost();
-        }
-
-        /// <summary>
-        /// Add the specified word to the spelling dictionary.
-        /// </summary>
-        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        /// <param name="word">The new word that will be added to the dictionary.</param>
-        public static void AddWordToDictionary(this IWebBrowser browser, string word)
-        {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
-
-            cefBrowser.AddWordToDictionary(word);
+            return browser.BrowserCore?.GetHost();
         }
 
         /// <summary>
@@ -1021,18 +1524,17 @@ namespace CefSharp
         /// <param name="deltaX">The delta x coordinate.</param>
         /// <param name="deltaY">The delta y coordinate.</param>
         /// <param name="modifiers">The modifiers.</param>
-        public static void SendMouseWheelEvent(this IWebBrowser browser, int x, int y, int deltaX, int deltaY, CefEventFlags modifiers)
+        public static void SendMouseWheelEvent(this IChromiumWebBrowserBase browser, int x, int y, int deltaX, int deltaY, CefEventFlags modifiers)
         {
-            var cefBrowser = browser.GetBrowser();
-            cefBrowser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
 
-            cefBrowser.SendMouseWheelEvent(x, y, deltaX, deltaY, modifiers);
+            browser.BrowserCore.SendMouseWheelEvent(x, y, deltaX, deltaY, modifiers);
         }
 
         /// <summary>
         /// Send a mouse wheel event to the browser.
         /// </summary>
-        /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
+        /// <param name="browser">The <see cref="IBrowser"/> instance this method extends.</param>
         /// <param name="x">The x coordinate relative to upper-left corner of view.</param>
         /// <param name="y">The y coordinate relative to upper-left corner of view.</param>
         /// <param name="deltaX">The delta x coordinate.</param>
@@ -1040,7 +1542,7 @@ namespace CefSharp
         /// <param name="modifiers">The modifiers.</param>
         public static void SendMouseWheelEvent(this IBrowser browser, int x, int y, int deltaX, int deltaY, CefEventFlags modifiers)
         {
-            browser.ThrowExceptionIfBrowserNull();
+            ThrowExceptionIfBrowserNull(browser);
 
             var host = browser.GetHost();
             ThrowExceptionIfBrowserHostNull(host);
@@ -1097,7 +1599,7 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Evaluate some Javascript code in the context of the MainFrame of the ChromiumWebBrowser. The script will be executed
+        /// Evaluate Javascript in the context of the MainFrame of the ChromiumWebBrowser. The script will be executed
         /// asynchronously and the method returns a Task encapsulating the response from the Javascript. The result of the script execution
         /// in javascript is Promise.resolve so even no promise values will be treated as a promise. Your javascript should return a value.
         /// The javascript will be wrapped in an Immediately Invoked Function Expression.
@@ -1112,6 +1614,8 @@ namespace CefSharp
         /// </returns>
         public static Task<JavascriptResponse> EvaluateScriptAsPromiseAsync(this IWebBrowser chromiumWebBrowser, string script, TimeSpan? timeout = null)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(chromiumWebBrowser);
+
             var jsbSettings = chromiumWebBrowser.JavascriptObjectRepository.Settings;
 
             var promiseHandlerScript = GetPromiseHandlerScript(script, jsbSettings.JavascriptBindingApiGlobalObjectName);
@@ -1120,7 +1624,28 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Evaluate some Javascript code in the context of the MainFrame of the ChromiumWebBrowser. The script will be executed
+        /// Evaluate Javascript in the context of this Browsers Main Frame. The script will be executed
+        /// asynchronously and the method returns a Task encapsulating the response from the Javascript. The result of the script execution
+        /// in javascript is Promise.resolve so even no promise values will be treated as a promise. Your javascript should return a value.
+        /// The javascript will be wrapped in an Immediately Invoked Function Expression.
+        /// When the promise either trigger then/catch this returned Task will be completed.
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when one or more arguments are outside the required range.</exception>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <param name="script">The Javascript code that should be executed.</param>
+        /// <param name="timeout">(Optional) The timeout after which the Javascript code execution should be aborted.</param>
+        /// <returns>
+        /// <see cref="Task{JavascriptResponse}"/> that can be awaited to perform the script execution.
+        /// </returns>
+        public static Task<JavascriptResponse> EvaluateScriptAsPromiseAsync(this IBrowser browser, string script, TimeSpan? timeout = null)
+        {
+            var promiseHandlerScript = GetPromiseHandlerScript(script, null);
+
+            return browser.EvaluateScriptAsync(promiseHandlerScript, timeout: timeout, useImmediatelyInvokedFuncExpression: true);
+        }
+
+        /// <summary>
+        /// Evaluate Javascript in the context of this Browsers Main Frame. The script will be executed
         /// asynchronously and the method returns a Task encapsulating the response from the Javascript. The result of the script execution
         /// in javascript is Promise.resolve so even no promise values will be treated as a promise. Your javascript should return a value.
         /// The javascript will be wrapped in an Immediately Invoked Function Expression.
@@ -1130,12 +1655,16 @@ namespace CefSharp
         /// <param name="frame">The <seealso cref="IFrame"/> instance this method extends.</param>
         /// <param name="script">The Javascript code that should be executed.</param>
         /// <param name="timeout">(Optional) The timeout after which the Javascript code execution should be aborted.</param>
+        /// <param name="javascriptBindingApiGlobalObjectName">
+        /// Only required if a custom value was specified for <see cref="JavascriptBinding.JavascriptBindingSettings.JavascriptBindingApiGlobalObjectName"/>
+        /// then this param must match that value. Otherwise exclude passing a value for this param or pass in null.
+        /// </param>
         /// <returns>
         /// <see cref="Task{JavascriptResponse}"/> that can be awaited to perform the script execution.
         /// </returns>
-        public static Task<JavascriptResponse> EvaluateScriptAsPromiseAsync(this IFrame frame, string script, TimeSpan? timeout = null)
+        public static Task<JavascriptResponse> EvaluateScriptAsPromiseAsync(this IFrame frame, string script, TimeSpan? timeout = null, string javascriptBindingApiGlobalObjectName = null)
         {
-            var promiseHandlerScript = GetPromiseHandlerScript(script, null);
+            var promiseHandlerScript = GetPromiseHandlerScript(script, javascriptBindingApiGlobalObjectName);
 
             return frame.EvaluateScriptAsync(promiseHandlerScript, timeout: timeout, useImmediatelyInvokedFuncExpression: true);
         }
@@ -1165,7 +1694,7 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Evaluate some Javascript code in the context of the MainFrame of the ChromiumWebBrowser. The script will be executed
+        /// Evaluate Javascript in the context of this Browsers Main Frame. The script will be executed
         /// asynchronously and the method returns a Task encapsulating the response from the Javascript
         /// </summary>
         /// <exception cref="ArgumentOutOfRangeException">Thrown when one or more arguments are outside the required range.</exception>
@@ -1177,21 +1706,48 @@ namespace CefSharp
         /// When false don't include a return statement e.g. 42;
         /// </param>
         /// <returns>
-        /// <see cref="Task{JavascriptResponse}"/> that can be awaited to perform the script execution.
+        /// <see cref="Task{JavascriptResponse}"/> that can be awaited to obtain the result of the script execution.
         /// </returns>
-        public static Task<JavascriptResponse> EvaluateScriptAsync(this IWebBrowser browser, string script, TimeSpan? timeout = null, bool useImmediatelyInvokedFuncExpression = false)
+        public static Task<JavascriptResponse> EvaluateScriptAsync(this IChromiumWebBrowserBase browser, string script, TimeSpan? timeout = null, bool useImmediatelyInvokedFuncExpression = false)
+        {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
+            if (browser is IWebBrowser b)
+            {
+                if (b.CanExecuteJavascriptInMainFrame == false)
+                {
+                    ThrowExceptionIfCanExecuteJavascriptInMainFrameFalse();
+                }
+            }
+
+            return browser.BrowserCore.EvaluateScriptAsync(script, timeout, useImmediatelyInvokedFuncExpression);
+        }
+
+        /// <summary>
+        /// Evaluate some Javascript code in the context of the MainFrame of the ChromiumWebBrowser. The script will be executed
+        /// asynchronously and the method returns a Task encapsulating the response from the Javascript
+        /// </summary>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when one or more arguments are outside the required range.</exception>
+        /// <param name="browser">The IBrowser instance this method extends.</param>
+        /// <param name="script">The Javascript code that should be executed.</param>
+        /// <param name="timeout">(Optional) The timeout after which the Javascript code execution should be aborted.</param>
+        /// <param name="useImmediatelyInvokedFuncExpression">When true the script is wrapped in a self executing function.
+        /// Make sure to use a return statement in your javascript. e.g. (function () { return 42; })();
+        /// When false don't include a return statement e.g. 42;
+        /// </param>
+        /// <returns>
+        /// <see cref="Task{JavascriptResponse}"/> that can be awaited to obtain the result of the script execution.
+        /// </returns>
+        public static Task<JavascriptResponse> EvaluateScriptAsync(this IBrowser browser, string script, TimeSpan? timeout = null, bool useImmediatelyInvokedFuncExpression = false)
         {
             if (timeout.HasValue && timeout.Value.TotalMilliseconds > UInt32.MaxValue)
             {
                 throw new ArgumentOutOfRangeException("timeout", "Timeout greater than Maximum allowable value of " + UInt32.MaxValue);
             }
 
-            if (browser.CanExecuteJavascriptInMainFrame == false)
-            {
-                ThrowExceptionIfCanExecuteJavascriptInMainFrameFalse();
-            }
+            ThrowExceptionIfBrowserNull(browser);
 
-            using (var frame = browser.GetMainFrame())
+            using (var frame = browser.MainFrame)
             {
                 ThrowExceptionIfFrameNull(frame);
 
@@ -1208,15 +1764,17 @@ namespace CefSharp
         /// <param name="methodName">The javascript method name to execute.</param>
         /// <param name="args">the arguments to be passed as params to the method.</param>
         /// <returns>
-        /// <see cref="Task{JavascriptResponse}"/> that can be awaited to perform the script execution.
+        /// <see cref="Task{JavascriptResponse}"/> that can be awaited to obtain the result of the script execution.
         /// </returns>
-        public static Task<JavascriptResponse> EvaluateScriptAsync(this IWebBrowser browser, string methodName, params object[] args)
+        public static Task<JavascriptResponse> EvaluateScriptAsync(this IChromiumWebBrowserBase browser, string methodName, params object[] args)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             return browser.EvaluateScriptAsync(null, methodName, args);
         }
 
         /// <summary>
-        /// Evaluate some Javascript code in the context of this WebBrowser using the specified timeout. The script will be executed
+        /// Evaluate Javascript code in the context of this WebBrowser using the specified timeout. The script will be executed
         /// asynchronously and the method returns a Task encapsulating the response from the Javascript This simple helper extension will
         /// encapsulate params in single quotes (unless int, uint, etc).
         /// </summary>
@@ -1228,8 +1786,10 @@ namespace CefSharp
         /// <returns>
         /// <see cref="Task{JavascriptResponse}"/> that can be awaited to perform the script execution.
         /// </returns>
-        public static Task<JavascriptResponse> EvaluateScriptAsync(this IWebBrowser browser, TimeSpan? timeout, string methodName, params object[] args)
+        public static Task<JavascriptResponse> EvaluateScriptAsync(this IChromiumWebBrowserBase browser, TimeSpan? timeout, string methodName, params object[] args)
         {
+            ThrowExceptionIfChromiumWebBrowserDisposed(browser);
+
             var script = GetScriptForJavascriptMethodWithArgs(methodName, args);
 
             return browser.EvaluateScriptAsync(script, timeout);
@@ -1245,6 +1805,35 @@ namespace CefSharp
             var internalBrowser = (IWebBrowserInternal)browser;
 
             internalBrowser.HasParent = true;
+        }
+
+        /// <summary>
+        /// Dispose of the DevToolsContext (if any). Used in conjunction with CefSharp.Dom
+        /// </summary>
+        /// <param name="webBrowserInternal">ChromiumWebBrowser instance</param>
+        public static void DisposeDevToolsContext(this IWebBrowserInternal webBrowserInternal)
+        {
+            if(webBrowserInternal == null)
+            {
+                return;
+            }
+
+            webBrowserInternal.DevToolsContext?.Dispose();
+            webBrowserInternal.DevToolsContext = null;
+        }
+
+        /// <summary>
+        /// Set the <see cref="IWebBrowserInternal.DevToolsContext"/> property to null. Used in conjunction with CefSharp.Dom
+        /// </summary>
+        /// <param name="webBrowserInternal">ChromiumWebBrowser instance</param>
+        public static void FreeDevToolsContext(this IWebBrowserInternal webBrowserInternal)
+        {
+            if (webBrowserInternal == null)
+            {
+                return;
+            }
+
+            webBrowserInternal.DevToolsContext = null;
         }
 
         /// <summary>
@@ -1339,16 +1928,33 @@ namespace CefSharp
             return stringBuilder.ToString();
         }
 
+        public static void ThrowExceptionIfChromiumWebBrowserDisposed(IChromiumWebBrowserBase browser)
+        {
+            if (browser == null)
+            {
+                throw new ArgumentNullException(nameof(browser));
+            }
+
+            if (browser.IsDisposed)
+            {
+                // Provide a more meaningful message for WinForms ChromiumHostControl
+                // should be ChromiumWebBrowser/ChromiumHostControl
+                var type = browser.GetType();
+
+                throw new ObjectDisposedException(type.Name);
+            }
+        }
+
         /// <summary>
         /// Throw exception if frame null.
         /// </summary>
         /// <exception cref="Exception">Thrown when an exception error condition occurs.</exception>
         /// <param name="frame">The <seealso cref="IFrame"/> instance this method extends.</param>
-        private static void ThrowExceptionIfFrameNull(IFrame frame)
+        public static void ThrowExceptionIfFrameNull(IFrame frame)
         {
             if (frame == null)
             {
-                throw new Exception("IFrame instance is null. Browser has likely not finished initializing or is in the process of disposing.");
+                throw new Exception(FrameNullExceptionString);
             }
         }
 
@@ -1357,11 +1963,11 @@ namespace CefSharp
         /// </summary>
         /// <exception cref="Exception">Thrown when an exception error condition occurs.</exception>
         /// <param name="browser">The ChromiumWebBrowser instance this method extends.</param>
-        internal static void ThrowExceptionIfBrowserNull(this IBrowser browser)
+        public static void ThrowExceptionIfBrowserNull(IBrowser browser)
         {
             if (browser == null)
             {
-                throw new Exception("IBrowser instance is null. Browser has likely not finished initializing or is in the process of disposing.");
+                throw new Exception(BrowserNullExceptionString);
             }
         }
 
@@ -1370,11 +1976,11 @@ namespace CefSharp
         /// </summary>
         /// <exception cref="Exception">Thrown when an exception error condition occurs.</exception>
         /// <param name="browserHost">The browser host.</param>
-        internal static void ThrowExceptionIfBrowserHostNull(IBrowserHost browserHost)
+        public static void ThrowExceptionIfBrowserHostNull(IBrowserHost browserHost)
         {
             if (browserHost == null)
             {
-                throw new Exception("IBrowserHost instance is null. Browser has likely not finished initializing or is in the process of disposing.");
+                throw new Exception(BrowserHostNullExceptionString);
             }
         }
 
@@ -1382,7 +1988,7 @@ namespace CefSharp
         /// Throw exception if can execute javascript in main frame false.
         /// </summary>
         /// <exception cref="Exception">Thrown when an exception error condition occurs.</exception>
-        private static void ThrowExceptionIfCanExecuteJavascriptInMainFrameFalse()
+        public static void ThrowExceptionIfCanExecuteJavascriptInMainFrameFalse()
         {
             throw new Exception("Unable to execute javascript at this time, scripts can only be executed within a V8Context. " +
                                     "Use the IWebBrowser.CanExecuteJavascriptInMainFrame property to guard against this exception. " +

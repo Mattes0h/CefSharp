@@ -42,7 +42,22 @@ namespace CefSharp
                 }
                 else if (obj->IsInt())
                 {
-                    list->SetInt(index, obj->GetIntValue());
+                    // CEF doesn't differentiate between UINT and INT
+                    // so we have to do some additional bounds checking
+                    // To make sure the correct value is returned
+                    // CEF IPC doesn't support UINT so we can only
+                    // support int and double.
+                    // https://github.com/cefsharp/CefSharp/issues/3858
+                    auto dValue = obj->GetDoubleValue();
+
+                    if (dValue < INT_MIN || dValue > INT_MAX)
+                    {
+                        list->SetDouble(index, dValue);
+                    }
+                    else
+                    {
+                        list->SetInt(index, obj->GetIntValue());
+                    }
                 }
                 else if (obj->IsDouble())
                 {
@@ -54,7 +69,7 @@ namespace CefSharp
                 }
                 else if (obj->IsDate())
                 {
-                    SetCefTime(list, index, obj->GetDateValue());
+                    SetCefTime(list, index, obj->GetDateValue().val);
                 }
                 else if (obj->IsArray())
                 {
@@ -141,7 +156,8 @@ namespace CefSharp
 
                 if (IsCefTime(list, index))
                 {
-                    return CefV8Value::CreateDate(GetCefTime(list, index));
+                    auto time = GetCefTime(list, index);
+                    return CefV8Value::CreateDate(time);
                 }
 
                 if (type == VTYPE_LIST)

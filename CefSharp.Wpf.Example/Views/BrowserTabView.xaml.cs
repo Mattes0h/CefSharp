@@ -13,6 +13,7 @@ using CefSharp.Example.Handlers;
 using CefSharp.Example.JavascriptBinding;
 using CefSharp.Example.ModelBinding;
 using CefSharp.Example.PostMessage;
+using CefSharp.Fluent;
 using CefSharp.Wpf.Example.Handlers;
 using CefSharp.Wpf.Example.ViewModels;
 using CefSharp.Wpf.Experimental.Accessibility;
@@ -43,10 +44,16 @@ namespace CefSharp.Wpf.Example.Views
 
             browser.RequestHandler = new ExampleRequestHandler();
 
+            //Test Handler allow All Permission
+            browser.PermissionHandler = new ExamplePermissionHandler();
+
             var bindingOptions = new BindingOptions()
             {
                 Binder = BindingOptions.DefaultBinder.Binder,
-                MethodInterceptor = new MethodInterceptorLogger() // intercept .net methods calls from js and log it
+                MethodInterceptor = new MethodInterceptorLogger(), // intercept .net methods calls from js and log it
+#if !NETCOREAPP
+                PropertyInterceptor = new PropertyInterceptorLogger()
+#endif
             };
 
             //To use the ResolveObject below and bind an object with isAsync:false we must set CefSharpSettings.WcfEnabled = true before
@@ -90,7 +97,7 @@ namespace CefSharp.Wpf.Example.Views
                 {
                     if (e.ObjectName == "bound")
                     {
-                        repo.Register("bound", new BoundObject(), isAsync: false, options: BindingOptions.DefaultBinder);
+                        repo.Register("bound", new BoundObject(), isAsync: false, options: bindingOptions);
                     }
                     else if (e.ObjectName == "boundAsync")
                     {
@@ -112,9 +119,67 @@ namespace CefSharp.Wpf.Example.Views
             };
 
             browser.DisplayHandler = new DisplayHandler();
-            //This LifeSpanHandler implementaion demos hosting a popup in a ChromiumWebBrowser
-            //instance, it's still considered Experimental
-            //browser.LifeSpanHandler = new ExperimentalLifespanHandler();
+            // This LifeSpanHandler implementaion demos hosting a popup in a ChromiumWebBrowser
+            // instance, it's still considered Experimental. The ChromiumWebBrowser
+            // is shown in a new Window. This could just as easily be a Tab/ContentControl/etc
+            /*
+            browser.LifeSpanHandler = CefSharp.Wpf.Experimental.LifeSpanHandler
+                .Create()
+                .OnPopupCreated((ctrl, targetUrl, targetFrameName, windowInfo) =>
+                {
+                    var windowX = (windowInfo.X == int.MinValue) ? double.NaN : windowInfo.X;
+                    var windowY = (windowInfo.Y == int.MinValue) ? double.NaN : windowInfo.Y;
+                    var windowWidth = (windowInfo.Width == int.MinValue) ? double.NaN : windowInfo.Width;
+                    var windowHeight = (windowInfo.Height == int.MinValue) ? double.NaN : windowInfo.Height;
+
+                    var popup = new System.Windows.Window
+                    {
+                        Left = windowX,
+                        Top = windowY,
+                        Width = windowWidth,
+                        Height = windowHeight,
+                        Content = ctrl,
+                        Owner = Window.GetWindow(browser),
+                        Title = targetFrameName
+                    };
+
+                    popup.Closed += (o, e) =>
+                    {
+                        var w = o as System.Windows.Window;
+                        if (w != null && w.Content is IWebBrowser)
+                        {
+                            (w.Content as IWebBrowser)?.Dispose();
+                            w.Content = null;
+                        }
+                    };
+                })
+                .OnPopupBrowserCreated((ctrl, browser) =>
+                {
+                    ctrl.Dispatcher.Invoke(() =>
+                    {
+                        var owner = System.Windows.Window.GetWindow(ctrl);
+
+                        if (owner != null && owner.Content == ctrl)
+                        {
+                            owner.Show();
+                        }
+                    });
+                })
+                .OnPopupDestroyed((ctrl, popupBrowser) =>
+                {
+                    //If browser is disposed then we don't need to remove the tab
+                    if (!ctrl.IsDisposed)
+                    {
+                        var owner = System.Windows.Window.GetWindow(ctrl);
+
+                        if (owner != null && owner.Content == ctrl)
+                        {
+                            owner.Close();
+                        }
+                    }
+                }).Build();
+            */
+
             browser.MenuHandler = new MenuHandler(addDevtoolsMenuItems:true);
 
             //Enable experimental Accessibility support 
@@ -128,11 +193,26 @@ namespace CefSharp.Wpf.Example.Views
                 }
             };
 
-            var downloadHandler = new DownloadHandler();
-            downloadHandler.OnBeforeDownloadFired += OnBeforeDownloadFired;
-            downloadHandler.OnDownloadUpdatedFired += OnDownloadUpdatedFired;
-            browser.DownloadHandler = downloadHandler;
+            browser.DownloadHandler = DownloadHandler
+                .Create()
+                .CanDownload((chromiumWebBrowser, browser, url, requestMethod) =>
+                {
+                    //All all downloads
+                    return true;
+                })
+                .OnBeforeDownload((chromiumWebBrowser, browser, downloadItem, callback) =>
+                {
+                    UpdateDownloadAction("OnBeforeDownload", downloadItem);
+
+                    callback.Continue("", showDialog: true);
+
+                }).OnDownloadUpdated((chromiumWebBrowser, browser, downloadItem, callback) =>
+                {
+                    UpdateDownloadAction("OnDownloadUpdated", downloadItem);
+                })
+                .Build();
             browser.AudioHandler = new CefSharp.Handler.AudioHandler();
+            browser.JsDialogHandler = new Handlers.JsDialogHandler();
 
             //Read an embedded bitmap into a memory stream then register it as a resource you can then load custom://cefsharp/images/beach.jpg
             var beachImageStream = new MemoryStream();
@@ -145,7 +225,6 @@ namespace CefSharp.Wpf.Example.Views
             browser.DragHandler = dragHandler;
             //browser.ResourceHandlerFactory = new InMemorySchemeAndResourceHandlerFactory();
             //You can specify a custom RequestContext to share settings amount groups of ChromiumWebBrowsers
-            //Also this is now the only way to access OnBeforePluginLoad - need to implement IRequestContextHandler
             //browser.RequestContext = new RequestContext(new RequestContextHandler());
             //NOTE - This is very important for this example as the default page will not load otherwise
             //browser.RequestContext.RegisterSchemeHandlerFactory(CefSharpSchemeHandlerFactory.SchemeName, null, new CefSharpSchemeHandlerFactory());
@@ -164,7 +243,9 @@ namespace CefSharp.Wpf.Example.Views
 
             browser.LoadError += (sender, args) =>
             {
-                // Don't display an error for downloaded files.
+                //Aborted is generally safe to ignore
+                //Actions like starting a download will trigger an Aborted error
+                //which doesn't require any user action.
                 if (args.ErrorCode == CefErrorCode.Aborted)
                 {
                     return;
@@ -178,10 +259,17 @@ namespace CefSharp.Wpf.Example.Views
                 }
 
                 // Display a load error message.
-                var errorBody = string.Format("<html><body bgcolor=\"white\"><h2>Failed to load URL {0} with error {1} ({2}).</h2></body></html>",
+                var errorHtml = string.Format("<html><body><h2>Failed to load URL {0} with error {1} ({2}).</h2></body></html>",
                                               args.FailedUrl, args.ErrorText, args.ErrorCode);
 
-                args.Frame.LoadHtml(errorBody, base64Encode: true);
+                _ = args.Browser.SetMainFrameDocumentContentAsync(errorHtml);
+
+                //AddressChanged isn't called for failed Urls so we need to manually update the Url TextBox
+                Dispatcher.InvokeAsync(() =>
+                {
+                    var viewModel = (BrowserTabViewModel)this.DataContext;
+                    viewModel.AddressEditable = args.FailedUrl;
+                });
             };
 
             CefExample.RegisterTestResources(browser);
@@ -225,16 +313,6 @@ namespace CefSharp.Wpf.Example.Views
                 e.Frame.ExecuteJavaScriptAsync("PostMessageIntTestCallback(" + (int)e.Message + ")");
             }
 
-        }
-
-        private void OnBeforeDownloadFired(object sender, DownloadItem e)
-        {
-            this.UpdateDownloadAction("OnBeforeDownload", e);
-        }
-
-        private void OnDownloadUpdatedFired(object sender, DownloadItem e)
-        {
-            this.UpdateDownloadAction("OnDownloadUpdated", e);
         }
 
         private void UpdateDownloadAction(string downloadAction, DownloadItem downloadItem)

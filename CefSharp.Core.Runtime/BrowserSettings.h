@@ -228,16 +228,6 @@ namespace CefSharp
             }
 
             /// <summary>
-            /// Controls whether any plugins will be loaded. Also configurable using the
-            /// "disable-plugins" command-line switch.
-            /// </summary>
-            virtual property CefState Plugins
-            {
-                CefState get() { return (CefState)_browserSettings->plugins; }
-                void set(CefState value) { _browserSettings->plugins = (cef_state_t)value; }
-            }
-
-            /// <summary>
             /// Controls whether image URLs will be loaded from the network. A cached image
             /// will still be rendered if requested. Also configurable using the
             /// "disable-image-loading" command-line switch.
@@ -318,10 +308,10 @@ namespace CefSharp
             /// CefSettings.BackgroundColor value will be used. If the alpha component is fully transparent
             /// for a windowless (WPF/OffScreen) browser then transparent painting will be enabled.
             /// </summary>
-            virtual property uint32 BackgroundColor
+            virtual property uint32_t BackgroundColor
             {
-                uint32 get() { return _browserSettings->background_color; }
-                void set(uint32 value) { _browserSettings->background_color = value; }
+                uint32_t get() { return _browserSettings->background_color; }
+                void set(uint32_t value) { _browserSettings->background_color = value; }
             }
 
             /// <summary>

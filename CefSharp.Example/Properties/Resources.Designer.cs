@@ -646,6 +646,9 @@ namespace CefSharp.Example.Properties {
         ///&lt;/head&gt;
         ///&lt;body&gt;
         ///    &lt;p&gt;Hello World&lt;/p&gt;
+        ///    &lt;script&gt;
+        ///        document.write(&quot;Testing&quot;);
+        ///    &lt;/script&gt;
         ///&lt;/body&gt;
         ///&lt;/html&gt;
         ///.
@@ -674,6 +677,27 @@ namespace CefSharp.Example.Properties {
         public static string home_html {
             get {
                 return ResourceManager.GetString("home_html", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to &lt;!DOCTYPE html&gt;
+        ///
+        ///&lt;html lang=&quot;en&quot; xmlns=&quot;http://www.w3.org/1999/xhtml&quot;&gt;
+        ///&lt;head&gt;
+        ///    &lt;meta charset=&quot;utf-8&quot; /&gt;
+        ///    &lt;title&gt;Image Test&lt;/title&gt;
+        ///&lt;/head&gt;
+        ///&lt;body&gt;
+        ///    &lt;p&gt;Image Loaded From Scheme Handler&lt;/p&gt;
+        ///    &lt;img src=&quot;/assets/images/beach-2089936_1920.jpg&quot; width=&quot;800&quot; /&gt;
+        ///&lt;/body&gt;
+        ///&lt;/html&gt;
+        ///.
+        /// </summary>
+        public static string ImageTest {
+            get {
+                return ResourceManager.GetString("ImageTest", resourceCulture);
             }
         }
         

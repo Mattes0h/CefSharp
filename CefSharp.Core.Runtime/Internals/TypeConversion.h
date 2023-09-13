@@ -9,7 +9,6 @@
 #include "include/internal/cef_ptr.h"
 #include "include\cef_download_item.h"
 #include "include\cef_response.h"
-#include "include\cef_web_plugin.h"
 
 #include "Serialization\ObjectsSerialization.h"
 #include "Serialization\V8Serialization.h"
@@ -63,8 +62,8 @@ namespace CefSharp
                     item->PercentComplete = downloadItem->GetPercentComplete();
                     item->TotalBytes = downloadItem->GetTotalBytes();
                     item->ReceivedBytes = downloadItem->GetReceivedBytes();
-                    item->StartTime = FromNative(downloadItem->GetStartTime());
-                    item->EndTime = FromNative(downloadItem->GetEndTime());
+                    item->StartTime = CefTimeUtils::FromBaseTimeToNullableDateTime((downloadItem->GetStartTime().val));
+                    item->EndTime = CefTimeUtils::FromBaseTimeToNullableDateTime(downloadItem->GetEndTime().val);
                     item->FullPath = StringUtils::ToClr(downloadItem->GetFullPath());
                     item->Id = downloadItem->GetId();
                     item->Url = StringUtils::ToClr(downloadItem->GetURL());
@@ -75,25 +74,6 @@ namespace CefSharp
                 }
 
                 return item;
-            }
-
-            //Convert from CefTime to Nullable<DateTime>
-            static Nullable<DateTime> FromNative(CefTime time)
-            {
-                auto epoch = time.GetDoubleT();
-                if (epoch == 0)
-                {
-                    return Nullable<DateTime>();
-                }
-                return Nullable<DateTime>(DateTime(1970, 1, 1, 0, 0, 0).AddSeconds(epoch).ToLocalTime());
-            }
-
-            static WebPluginInfo^ FromNative(CefRefPtr<CefWebPluginInfo> webPluginInfo)
-            {
-                return gcnew WebPluginInfo(StringUtils::ToClr(webPluginInfo->GetName()),
-                    StringUtils::ToClr(webPluginInfo->GetDescription()),
-                    StringUtils::ToClr(webPluginInfo->GetPath()),
-                    StringUtils::ToClr(webPluginInfo->GetVersion()));
             }
 
             static IList<DraggableRegion>^ FromNative(const std::vector<CefDraggableRegion>& regions)
@@ -263,18 +243,6 @@ namespace CefSharp
                 return result;
             }
 
-            // Copied from CefSharp.BrowserSubprocess.Core\TypeUtils.h since it can't be included
-            static DateTime ConvertCefTimeToDateTime(CefTime time)
-            {
-                return DateTimeUtils::FromCefTime(time.year,
-                    time.month,
-                    time.day_of_month,
-                    time.hour,
-                    time.minute,
-                    time.second,
-                    time.millisecond);
-            }
-
             static Cookie^ FromNative(const CefCookie& cefCookie)
             {
                 auto cookie = gcnew Cookie();
@@ -288,14 +256,14 @@ namespace CefSharp
                     cookie->Path = StringUtils::ToClr(cefCookie.path);
                     cookie->Secure = cefCookie.secure == 1;
                     cookie->HttpOnly = cefCookie.httponly == 1;
-                    cookie->SetCreationDate(ConvertCefTimeToDateTime(cefCookie.creation));
-                    cookie->SetLastAccessDate(ConvertCefTimeToDateTime(cefCookie.last_access));
+                    cookie->SetCreationDate(cefCookie.creation.val);
+                    cookie->SetLastAccessDate(cefCookie.last_access.val);
                     cookie->SameSite = (CefSharp::Enums::CookieSameSite)cefCookie.same_site;
                     cookie->Priority = (CefSharp::Enums::CookiePriority)cefCookie.priority;
 
                     if (cefCookie.has_expires)
                     {
-                        cookie->Expires = ConvertCefTimeToDateTime(cefCookie.expires);
+                        cookie->Expires = CefTimeUtils::FromBaseTimeToDateTime(cefCookie.expires.val);
                     }
                 }
 
@@ -316,8 +284,7 @@ namespace CefSharp
                     return gcnew NavigationEntry(current, DateTime::MinValue, nullptr, -1, nullptr, nullptr, (TransitionType)-1, nullptr, false, false, sslStatus);
                 }
 
-                auto time = entry->GetCompletionTime();
-                DateTime completionTime = CefTimeUtils::ConvertCefTimeToDateTime(time.GetDoubleT());
+                DateTime completionTime = CefTimeUtils::FromBaseTimeToDateTime(entry->GetCompletionTime().val);
                 auto ssl = entry->GetSSLStatus();
                 X509Certificate2^ sslCertificate;
 

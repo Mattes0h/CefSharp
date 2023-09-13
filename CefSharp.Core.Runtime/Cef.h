@@ -13,14 +13,14 @@
 #include <msclr/marshal.h>
 #include <include/cef_version.h>
 #include <include/cef_origin_whitelist.h>
-#include <include/cef_web_plugin.h>
 #include <include/cef_crash_util.h>
 #include <include/cef_parser.h>
+#include <include/cef_task.h>
 #include <include/internal/cef_types.h>
 
 #include "Internals/CefSharpApp.h"
-#include "Internals/CefWebPluginInfoVisitorAdapter.h"
 #include "Internals/CefTaskScheduler.h"
+#include "Internals/CefTaskDelegate.h"
 #include "CookieManager.h"
 #include "CefSettingsBase.h"
 #include "RequestContext.h"
@@ -257,17 +257,18 @@ namespace CefSharp
                 if (_initialized)
                 {
                     // NOTE: Can only initialize Cef once, to make this explicitly clear throw exception on subsiquent attempts
-                    throw gcnew Exception("CEF can only be initialized once per process. This is a limitation of the underlying " +
+                    throw gcnew Exception("Cef.Initialize can only be called once per process. This is a limitation of the underlying " +
                         "CEF/Chromium framework. You can change many (not all) settings at runtime through RequestContext.SetPreference. " +
                         "See https://github.com/cefsharp/CefSharp/wiki/General-Usage#request-context-browser-isolation " +
-                        "Use Cef.IsInitialized to guard against this exception. If you are seeing this unexpectedly then you are likely " +
-                        "calling Cef.Initialize after you've created an instance of ChromiumWebBrowser, it must be before the first instance is created.");
+                        "Use Cef.IsInitialized to check if Cef.Initialize has already been called to avoid this exception. " +
+                        "If you are seeing this unexpectedly then you are likely " +
+                        "calling Cef.Initialize after you've created an instance of ChromiumWebBrowser, it must be called before the first instance is created.");
                 }
 
                 if (_hasShutdown)
                 {
                     // NOTE: CefShutdown has already been called.
-                    throw gcnew Exception("Cef.Shutdown has already been called. CEF can only be initialized once per process. " +
+                    throw gcnew Exception("Cef.Shutdown has already been called. Cef.Initialize can only be called once per process. " +
                         "This is a limitation of the underlying CEF/Chromium framework. Calling Cef.Initialize after Cef.Shutdown is not supported. "
                         "You can change many (not all) settings at runtime through RequestContext.SetPreference." +
                         "See https://github.com/cefsharp/CefSharp/wiki/General-Usage#request-context-browser-isolation");
@@ -310,13 +311,22 @@ namespace CefSharp
                                                            cefSettings->CefCustomSchemes,
                                                            cefApp));
                 CefMainArgs main_args;
+                CefSettings settings = *(cefSettings->_cefSettings);
 
-                auto success = CefInitialize(main_args, *(cefSettings->_cefSettings), app.get(), nullptr);
+                auto success = CefInitialize(main_args, settings, app.get(), nullptr);
+
+                if (!success)
+                {
+                    CefSharp::Internals::GlobalContextInitialized::SetResult(false);
+                }
 
                 _initialized = success;
                 _multiThreadedMessageLoop = cefSettings->MultiThreadedMessageLoop;
 
                 _initializedThreadId = Thread::CurrentThread->ManagedThreadId;
+
+                //We took a copy of CefSettings earlier, now we set our pointer to nullptr
+                delete cefSettings;
 
                 return success;
             }
@@ -554,7 +564,7 @@ namespace CefSharp
                         {
                             throw gcnew Exception("Cef.Shutdown must be called on the same thread that Cef.Initialize was called - typically your UI thread. " +
                                 "If you called Cef.Initialize on a Thread other than the UI thread then you will need to call Cef.Shutdown on the same thread. " +
-                                "Cef.Initialize was called on ManagedThreadId: " + _initializedThreadId + "where Cef.Shutdown is being called on " +
+                                "Cef.Initialize was called on ManagedThreadId: " + _initializedThreadId + " where Cef.Shutdown is being called on " +
                                 "ManagedThreadId: " + Thread::CurrentThread->ManagedThreadId);
                         }
 
@@ -629,56 +639,6 @@ namespace CefSharp
             }
 
             /// <summary>
-            /// Visit web plugin information. Can be called on any thread in the browser process.
-            /// </summary>
-            static void VisitWebPluginInfo(IWebPluginInfoVisitor^ visitor)
-            {
-                CefVisitWebPluginInfo(new CefWebPluginInfoVisitorAdapter(visitor));
-            }
-
-            /// <summary>
-            /// Async returns a list containing Plugin Information
-            /// (Wrapper around CefVisitWebPluginInfo)
-            /// </summary>
-            /// <returns>Returns List of <see cref="WebPluginInfo"/> structs.</returns>
-            static Task<List<WebPluginInfo^>^>^ GetPlugins()
-            {
-                auto taskVisitor = gcnew TaskWebPluginInfoVisitor();
-                CefRefPtr<CefWebPluginInfoVisitorAdapter> visitor = new CefWebPluginInfoVisitorAdapter(taskVisitor);
-
-                CefVisitWebPluginInfo(visitor);
-
-                return taskVisitor->Task;
-            }
-
-            /// <summary>
-            /// Cause the plugin list to refresh the next time it is accessed regardless of whether it has already been loaded.
-            /// </summary>
-            static void RefreshWebPlugins()
-            {
-                CefRefreshWebPlugins();
-            }
-
-            /// <summary>
-            /// Unregister an internal plugin. This may be undone the next time RefreshWebPlugins() is called. 
-            /// </summary>
-            /// <param name="path">Path (directory + file).</param>
-            static void UnregisterInternalWebPlugin(String^ path)
-            {
-                CefUnregisterInternalWebPlugin(StringUtils::ToNative(path));
-            }
-
-            /// <summary>
-            /// Call during process startup to enable High-DPI support on Windows 7 or newer.
-            /// Older versions of Windows should be left DPI-unaware because they do not
-            /// support DirectWrite and GDI fonts are kerned very badly.
-            /// </summary>
-            static void EnableHighDPISupport()
-            {
-                CefEnableHighDPISupport();
-            }
-
-            /// <summary>
             /// Returns true if called on the specified CEF thread.
             /// </summary>
             /// <returns>Returns true if called on the specified thread.</returns>
@@ -714,7 +674,7 @@ namespace CefSharp
             /// <param name="g">Green</param>
             /// <param name="b">Blue</param>
             /// <returns>Returns the color.</returns>
-            static uint32 ColorSetARGB(uint32 a, uint32 r, uint32 g, uint32 b)
+            static uint32_t ColorSetARGB(uint32_t a, uint32_t r, uint32_t g, uint32_t b)
             {
                 return CefColorSetARGB(a, r, g, b);
             }
@@ -881,6 +841,21 @@ namespace CefSharp
             /// </summary>
             static void WaitForBrowsersToClose()
             {
+                WaitForBrowsersToClose(750);
+            }
+
+            /// <summary>
+            /// Helper method to ensure all ChromiumWebBrowser instances have been
+            /// closed/disposed, should be called before Cef.Shutdown.
+            /// Disposes all remaning ChromiumWebBrowser instances
+            /// then waits for CEF to release it's remaning CefBrowser instances.
+            /// Finally a small delay of 50ms to allow for CEF to finish it's cleanup.
+            /// Should only be called when MultiThreadedMessageLoop = true;
+            /// (Hasn't been tested when when CEF integrates into main message loop).
+            /// </summary>
+            /// <param name="timeoutInMiliseconds">The timeout in miliseconds.</param>
+            static void WaitForBrowsersToClose(int timeoutInMiliseconds)
+            {
                 if (!_waitForBrowsersToCloseEnabled)
                 {
                     throw gcnew Exception("This feature is currently disabled. Call Cef.EnableWaitForBrowsersToClose before calling Cef.Initialize to enable.");
@@ -896,10 +871,37 @@ namespace CefSharp
                 _disposables->Clear();
 
                 //Wait for the browsers to close
-                BrowserRefCounter::Instance->WaitForBrowsersToClose(500);
+                BrowserRefCounter::Instance->WaitForBrowsersToClose(timeoutInMiliseconds);
 
                 //A few extra ms to allow for CEF to finish 
                 Thread::Sleep(50);
+            }
+
+            /// <summary>
+            /// Post an action for delayed execution on the specified thread.
+            /// </summary>
+            /// <param name="threadId">thread id</param>
+            /// <param name="action">action to execute</param>
+            /// <param name="delayInMs">delay in ms</param>
+            /// <returns>bool</returns>
+            static bool PostDelayedAction(CefThreadIds threadId, Action^ action, int delayInMs)
+            {
+                auto task = new CefTaskDelegate(action);
+
+                return CefPostDelayedTask((cef_thread_id_t)threadId, task, delayInMs);
+            }
+
+            /// <summary>
+            /// Post an action for execution on the specified thread.
+            /// </summary>
+            /// <param name="threadId">thread id</param>
+            /// <param name="action">action to execute</param>
+            /// <returns>bool</returns>
+            static bool PostAction(CefThreadIds threadId, Action^ action)
+            {
+                auto task = new CefTaskDelegate(action);
+
+                return CefPostTask((cef_thread_id_t)threadId, task);
             }
         };
     }

@@ -15,9 +15,10 @@ namespace CefSharp
     /// WPF/WinForms/OffScreen each have their own CefSettings implementation that sets
     /// relevant settings e.g. OffScreen starts with audio muted.
     /// </summary>
-    public abstract class CefSettingsBase
+    public abstract class CefSettingsBase : IDisposable
     {
-        internal Core.CefSettingsBase settings = new Core.CefSettingsBase();
+        private bool disposed = false;
+        internal Core.CefSettingsBase settings = new Core.CefSettingsBase();        
 
 #if NETCOREAPP
         public CefSettingsBase() : base()
@@ -38,8 +39,16 @@ namespace CefSharp
         /// </summary>
         public void Dispose()
         {
-            settings?.Dispose();
+            disposed = true;
             settings = null;
+        }
+
+        /// <summary>
+        /// Gets a value indicating if the CefSettings has been disposed.
+        /// </summary>
+        public bool IsDisposed
+        {
+            get { return disposed; }
         }
 
         /// <summary>
@@ -64,7 +73,7 @@ namespace CefSharp
         /// **Experimental**
         /// Set to true to enable use of the Chrome runtime in CEF. This feature is
         /// considered experimental and is not recommended for most users at this time.
-        /// See issue https://bitbucket.org/chromiumembedded/cef/issues/2969/support-chrome-windows-with-cef-callbacks for details.
+        /// See issue https://github.com/chromiumembedded/cef/issues/2969
         /// </summary>
         public bool ChromeRuntime
         {
@@ -96,7 +105,7 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Set to true to have the browser process message loop run in a separate thread. If false than the CefDoMessageLoopWork()
+        /// Set to true to have the browser process message loop run in a separate thread. If false then the CefDoMessageLoopWork()
         /// function must be called from your application message loop. This option is only supported on Windows. The default value is
         /// true.
         /// </summary>
@@ -145,17 +154,6 @@ namespace CefSharp
         {
             get { return settings.RootCachePath; }
             set { settings.RootCachePath = value; }
-        }
-
-        /// <summary>
-        /// The location where user data such as the Widevine CDM module and spell checking dictionary files will be stored on disk.
-        /// If this value is empty then "Local Settings\Application Data\CEF\User Data" directory under the user profile directory
-        /// will be used. If this value is non-empty then it must be an absolute path.
-        /// </summary>
-        public string UserDataPath
-        {
-            get { return settings.UserDataPath; }
-            set { settings.UserDataPath = value; }
         }
 
         /// <summary>
@@ -393,16 +391,6 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// GUID string used for identifying the application. This is passed to the system AV function for scanning downloaded files. By
-        /// default, the GUID will be an empty string and the file will be treated as an untrusted file when the GUID is empty.
-        /// </summary>
-        public string ApplicationClientIdForFileScanning
-        {
-            get { return settings.ApplicationClientIdForFileScanning; }
-            set { settings.ApplicationClientIdForFileScanning = value; }
-        }
-
-        /// <summary>
         /// Registers a custom scheme using the provided settings.
         /// </summary>
         /// <param name="scheme">The CefCustomScheme which provides the details about the scheme.</param>
@@ -413,7 +401,7 @@ namespace CefSharp
 
         /// <summary>
         /// Set command line argument to disable GPU Acceleration. WebGL will use
-        /// software rendering via Swiftshader (https://swiftshader.googlesource.com/SwiftShader#introduction)
+        /// software rendering
         /// </summary>
         public void DisableGpuAcceleration()
         {
@@ -425,7 +413,7 @@ namespace CefSharp
 
         /// <summary>
         /// Set command line argument to enable Print Preview See
-        /// https://bitbucket.org/chromiumembedded/cef/issues/123/add-support-for-print-preview for details.
+        /// https://github.com/chromiumembedded/cef/issues/123/add-support-for-print-preview for details.
         /// </summary>
         public void EnablePrintPreview()
         {
@@ -436,15 +424,14 @@ namespace CefSharp
         }
 
         /// <summary>
-        /// Set command line arguments for best OSR (Offscreen and WPF) Rendering performance Swiftshader will be used for WebGL, look at the source
-        /// to determine which flags best suite your requirements. See https://swiftshader.googlesource.com/SwiftShader#introduction for
-        /// details on Swiftshader
+        /// Set command line arguments for best OSR (Offscreen and WPF) Rendering performance Software Rendering will be used for WebGL, look at the source
+        /// to determine which flags best suite your requirements. 
         /// </summary>
         public void SetOffScreenRenderingBestPerformanceArgs()
         {
             // Use software rendering and compositing (disable GPU) for increased FPS
             // and decreased CPU usage. 
-            // See https://bitbucket.org/chromiumembedded/cef/issues/1257 for details.
+            // See https://github.com/chromiumembedded/cef/issues/1257 for details.
             if (!settings.CefCommandLineArgs.ContainsKey("disable-gpu"))
             {
                 settings.CefCommandLineArgs.Add("disable-gpu");
@@ -461,7 +448,7 @@ namespace CefSharp
             // creation time via IBrowserSettings.WindowlessFrameRate or changed
             // dynamically using IBrowserHost.SetWindowlessFrameRate. In cefclient
             // it can be set via the command-line using `--off-screen-frame-rate=XX`.
-            // See https://bitbucket.org/chromiumembedded/cef/issues/1368 for details.
+            // See https://github.com/chromiumembedded/cef/issues/1368 for details.
             if (!settings.CefCommandLineArgs.ContainsKey("enable-begin-frame-scheduling"))
             {
                 settings.CefCommandLineArgs.Add("enable-begin-frame-scheduling");

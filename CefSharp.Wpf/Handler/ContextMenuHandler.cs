@@ -15,6 +15,15 @@ namespace CefSharp.Wpf.Handler
     /// </summary>
     public class ContextMenuHandler : CefSharp.Handler.ContextMenuHandler
     {
+        /// <summary>
+        /// Open DevTools <see cref="CefMenuCommand"/> Id
+        /// </summary>
+        public const int CefMenuCommandShowDevToolsId = 28440;
+        /// <summary>
+        /// Close DevTools <see cref="CefMenuCommand"/> Id
+        /// </summary>
+        public const int CefMenuCommandCloseDevToolsId = 28441;
+
         private readonly bool addDevtoolsMenuItems;
 
         public ContextMenuHandler(bool addDevtoolsMenuItems = false)
@@ -32,26 +41,9 @@ namespace CefSharp.Wpf.Handler
                     model.AddSeparator();
                 }
 
-                model.AddItem((CefMenuCommand)26501, "Show DevTools");
-                model.AddItem((CefMenuCommand)26502, "Close DevTools");
+                model.AddItem((CefMenuCommand)CefMenuCommandShowDevToolsId, "Show DevTools (Inspect)");
+                model.AddItem((CefMenuCommand)CefMenuCommandCloseDevToolsId, "Close DevTools");
             }
-        }
-
-        /// <inheritdoc/>
-        protected override bool OnContextMenuCommand(IWebBrowser chromiumWebBrowser, IBrowser browser, IFrame frame, IContextMenuParams parameters, CefMenuCommand commandId, CefEventFlags eventFlags)
-        {
-            if (commandId == (CefMenuCommand)26501)
-            {
-                browser.GetHost().ShowDevTools();
-                return true;
-            }
-            if (commandId == (CefMenuCommand)26502)
-            {
-                browser.GetHost().CloseDevTools();
-                return true;
-            }
-
-            return false;
         }
 
         /// <inheritdoc/>
@@ -105,17 +97,17 @@ namespace CefSharp.Wpf.Handler
 
                 foreach (var item in menuItems)
                 {
-                    if (item.CommandId == CefMenuCommand.NotFound)
-                    {
-                        continue;
-                    }
-
-                    if(item.IsSeperator)
+                    if (item.IsSeperator)
                     {
                         menu.Items.Add(new Separator());
 
                         continue;
                     }
+
+                    if (item.CommandId == CefMenuCommand.NotFound)
+                    {
+                        continue;
+                    }                    
 
                     var menuItem = new MenuItem
                     {
@@ -273,7 +265,7 @@ namespace CefSharp.Wpf.Handler
                 }
                 case CefMenuCommand.Find:
                 {
-                    browser.GetHost().Find(0, model.SelectionText, true, false, false);
+                    browser.GetHost().Find(model.SelectionText, true, false, false);
                     break;
                 }
 
@@ -284,12 +276,12 @@ namespace CefSharp.Wpf.Handler
                     break;
                 }
 
-                case (CefMenuCommand)26501:
+                case (CefMenuCommand)CefMenuCommandShowDevToolsId:
                 {
                     browser.GetHost().ShowDevTools(inspectElementAtX: model.XCoord, inspectElementAtY: model.YCoord);
                     break;
                 }
-                case (CefMenuCommand)26502:
+                case (CefMenuCommand)CefMenuCommandCloseDevToolsId:
                 {
                     browser.GetHost().CloseDevTools();
                     break;
@@ -313,7 +305,7 @@ namespace CefSharp.Wpf.Handler
 
                 var subItems = model.GetSubMenuAt(i);
 
-                IList<MenuModel> subMenus = subItems == null ? null : GetMenuItems(subItems);
+                var subMenus = subItems == null ? null : GetMenuItems(subItems);
 
                 var menuItem = new MenuModel
                 {

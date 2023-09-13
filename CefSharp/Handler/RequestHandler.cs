@@ -20,9 +20,9 @@ namespace CefSharp.Handler
         }
 
         /// <summary>
-        /// Called before browser navigation. If the navigation is allowed <see cref="IWebBrowser.FrameLoadStart"/> and
-        /// <see cref="IWebBrowser.FrameLoadEnd"/>
-        /// will be called. If the navigation is canceled <see cref="IWebBrowser.LoadError"/> will be called with an ErrorCode value of
+        /// Called before browser navigation. If the navigation is allowed <see cref="IChromiumWebBrowserBase.FrameLoadStart"/> and
+        /// <see cref="IChromiumWebBrowserBase.FrameLoadEnd"/>
+        /// will be called. If the navigation is canceled <see cref="IChromiumWebBrowserBase.LoadError"/> will be called with an ErrorCode value of
         /// <see cref="CefErrorCode.Aborted"/>.
         /// </summary>
         /// <param name="chromiumWebBrowser">the ChromiumWebBrowser control.</param>
@@ -129,34 +129,6 @@ namespace CefSharp.Handler
         }
 
         /// <inheritdoc/>
-        bool IRequestHandler.OnQuotaRequest(IWebBrowser chromiumWebBrowser, IBrowser browser, string originUrl, long newSize,
-            IRequestCallback callback)
-        {
-            return OnQuotaRequest(chromiumWebBrowser, browser, originUrl, newSize, callback);
-        }
-
-        /// <summary>
-        /// Called when JavaScript requests a specific storage quota size via the webkitStorageInfo.requestQuota function. For async
-        /// processing return true and execute <see cref="IRequestCallback.Continue"/> at a later time to grant or deny the request or
-        /// <see cref="IRequestCallback.Cancel"/> to cancel.
-        /// </summary>
-        /// <param name="chromiumWebBrowser">The ChromiumWebBrowser control.</param>
-        /// <param name="browser">the browser object.</param>
-        /// <param name="originUrl">the origin of the page making the request.</param>
-        /// <param name="newSize">is the requested quota size in bytes.</param>
-        /// <param name="callback">Callback interface used for asynchronous continuation of url requests.</param>
-        /// <returns>
-        /// Return false to cancel the request immediately. Return true to continue the request and call
-        /// <see cref="IRequestCallback.Continue"/> either in this method or at a later time to grant or deny the request.
-        /// </returns>
-        protected virtual bool OnQuotaRequest(IWebBrowser chromiumWebBrowser, IBrowser browser, string originUrl, long newSize,
-            IRequestCallback callback)
-        {
-            callback.Dispose();
-            return false;
-        }
-
-        /// <inheritdoc/>
         bool IRequestHandler.OnCertificateError(IWebBrowser chromiumWebBrowser, IBrowser browser, CefErrorCode errorCode, string requestUrl,
            ISslInfo sslInfo, IRequestCallback callback)
         {
@@ -214,22 +186,6 @@ namespace CefSharp.Handler
         {
             callback.Dispose();
             return false;
-        }
-
-        /// <inheritdoc/>
-        void IRequestHandler.OnPluginCrashed(IWebBrowser chromiumWebBrowser, IBrowser browser, string pluginPath)
-        {
-            OnPluginCrashed(chromiumWebBrowser, browser, pluginPath);
-        }
-
-        /// <summary>
-        /// Called when a plugin has crashed.
-        /// </summary>
-        /// <param name="chromiumWebBrowser">the ChromiumWebBrowser control.</param>
-        /// <param name="browser">the browser object.</param>
-        /// <param name="pluginPath">path of the plugin that crashed.</param>
-        protected virtual void OnPluginCrashed(IWebBrowser chromiumWebBrowser, IBrowser browser, string pluginPath)
-        {
         }
 
         /// <inheritdoc/>

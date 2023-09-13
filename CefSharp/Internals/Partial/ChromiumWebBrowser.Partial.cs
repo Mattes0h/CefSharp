@@ -49,6 +49,25 @@ namespace CefSharp.WinForms
         private IBrowser browser;
 
         /// <summary>
+        /// Initial browser load task complection source
+        /// </summary>
+        private TaskCompletionSource<LoadUrlAsyncResponse> initialLoadTaskCompletionSource = new TaskCompletionSource<LoadUrlAsyncResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>
+        /// Initial browser load action
+        /// </summary>
+        private Action<bool?, CefErrorCode?> initialLoadAction;
+
+        /// <summary>
+        /// Get access to the core <see cref="IBrowser"/> instance.
+        /// Maybe null if the underlying CEF Browser has not yet been
+        /// created or if this control has been disposed. Check
+        /// <see cref="IBrowser.IsDisposed"/> before accessing.
+        /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden), DefaultValue(null)]
+        public IBrowser BrowserCore { get; internal set; }
+
+        /// <summary>
         /// A flag that indicates if you can execute javascript in the main frame.
         /// Flag is set to true in IRenderProcessMessageHandler.OnContextCreated.
         /// and false in IRenderProcessMessageHandler.OnContextReleased
@@ -131,6 +150,11 @@ namespace CefSharp.WinForms
         /// </summary>
         [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden), DefaultValue(null)]
         public IFrameHandler FrameHandler { get; set; }
+        /// <summary>
+        /// Implement <see cref="IPermissionHandler" /> to handle events related to permission requests.
+        /// </summary>
+        [Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden), DefaultValue(null)]
+        public IPermissionHandler PermissionHandler { get; set; }
         /// <summary>
         /// The <see cref="IFocusHandler" /> for this ChromiumWebBrowser.
         /// </summary>
@@ -218,7 +242,7 @@ namespace CefSharp.WinForms
         /// A flag that indicates whether the WebBrowser is initialized (true) or not (false).
         /// </summary>
         /// <value><c>true</c> if this instance is browser initialized; otherwise, <c>false</c>.</value>
-        bool IWebBrowser.IsBrowserInitialized
+        bool IChromiumWebBrowserBase.IsBrowserInitialized
         {
             get { return InternalIsBrowserInitialized(); }
         }
@@ -290,6 +314,8 @@ namespace CefSharp.WinForms
         void IWebBrowserInternal.OnLoadError(LoadErrorEventArgs args)
         {
             LoadError?.Invoke(this, args);
+
+            initialLoadAction?.Invoke(null, args.ErrorCode);
         }
 
         /// <summary>
@@ -297,6 +323,11 @@ namespace CefSharp.WinForms
         /// </summary>
         /// <value><c>true</c> if this instance has parent; otherwise, <c>false</c>.</value>
         bool IWebBrowserInternal.HasParent { get; set; }
+
+        /// <summary>
+        /// Used by CefSharp.Puppeteer to associate a single DevToolsContext with a ChromiumWebBrowser instance.
+        /// </summary>
+        IDisposable IWebBrowserInternal.DevToolsContext { get; set; }
 
         /// <summary>
         /// Gets the browser adapter.
@@ -315,9 +346,24 @@ namespace CefSharp.WinForms
             }
 
             this.browser = browser;
+            BrowserCore = browser;
+            initialLoadAction = InitialLoad;
             Interlocked.Exchange(ref browserInitialized, 1);
 
             OnAfterBrowserCreated(browser);
+        }
+
+        /// <summary>
+        /// Sets the loading state change.
+        /// </summary>
+        /// <param name="args">The <see cref="LoadingStateChangedEventArgs"/> instance containing the event data.</param>
+        void IWebBrowserInternal.SetLoadingStateChange(LoadingStateChangedEventArgs args)
+        {
+            SetLoadingStateChange(args);
+
+            LoadingStateChanged?.Invoke(this, args);
+
+            initialLoadAction?.Invoke(args.IsLoading, null);
         }
 
         /// <inheritdoc/>
@@ -327,15 +373,111 @@ namespace CefSharp.WinForms
         }
 
         /// <inheritdoc/>
-        public Task<LoadUrlAsyncResponse> LoadUrlAsync(string url = null, SynchronizationContext ctx = null)
+        public Task<LoadUrlAsyncResponse> LoadUrlAsync(string url)
         {
             //LoadUrlAsync is actually a static method so that CefSharp.Wpf.HwndHost can reuse the code
-            //It's not actually an extension method so we can have it included as part of the
-            //IWebBrowser interface
-            return CefSharp.WebBrowserExtensions.LoadUrlAsync(this, url, ctx);
+            return CefSharp.WebBrowserExtensions.LoadUrlAsync(this, url);
+        }
+
+        /// <inheritdoc/>
+        public Task<WaitForNavigationAsyncResponse> WaitForNavigationAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            //WaitForNavigationAsync is actually a static method so that CefSharp.Wpf.HwndHost can reuse the code
+            return CefSharp.WebBrowserExtensions.WaitForNavigationAsync(this, timeout, cancellationToken);
+        }
+
+        /// <inheritdoc/>
+        public Task<LoadUrlAsyncResponse> WaitForInitialLoadAsync()
+        {
+            return initialLoadTaskCompletionSource.Task;
+        }
+
+        /// <inheritdoc/>
+        public bool TryGetBrowserCoreById(int browserId, out IBrowser browser)
+        {
+            var browserAdapter = managedCefBrowserAdapter;
+
+            if (IsDisposed || browserAdapter == null || browserAdapter.IsDisposed)
+            {
+                browser = null;
+
+                return false;
+            }
+
+            browser = browserAdapter.GetBrowser(browserId);
+
+            return browser != null;
+        }
+
+        /// <inheritdoc/>
+        public async Task<CefSharp.Structs.DomRect> GetContentSizeAsync()
+        {
+            ThrowExceptionIfDisposed();
+            ThrowExceptionIfBrowserNotInitialized();
+
+            using (var devToolsClient = browser.GetDevToolsClient())
+            {
+                //Get the content size
+                var layoutMetricsResponse = await devToolsClient.Page.GetLayoutMetricsAsync().ConfigureAwait(continueOnCapturedContext: false);
+                var rect = layoutMetricsResponse.CssContentSize;
+
+                return new Structs.DomRect(rect.X, rect.Y, rect.Width, rect.Height);
+            }
+        }
+
+        private void InitialLoad(bool? isLoading, CefErrorCode? errorCode)
+        {
+            if(IsDisposed)
+            {
+                initialLoadAction = null;
+
+                initialLoadTaskCompletionSource.TrySetCanceled();
+
+                return;
+            }
+
+            if (isLoading.HasValue)
+            {
+                if (isLoading.Value)
+                {
+                    return;
+                }
+
+                initialLoadAction = null;
+
+                var host = browser?.GetHost();
+
+                var navEntry = host?.GetVisibleNavigationEntry();
+
+                int statusCode = navEntry?.HttpStatusCode ?? -1;
+
+                //By default 0 is some sort of error, we map that to -1
+                //so that it's clearer that something failed.
+                if (statusCode == 0)
+                {
+                    statusCode = -1;
+                }
+
+                initialLoadTaskCompletionSource.TrySetResult(new LoadUrlAsyncResponse(CefErrorCode.None, statusCode));
+            }
+            else if (errorCode.HasValue)
+            {
+                //Actions that trigger a download will raise an aborted error.
+                //Generally speaking Aborted is safe to ignore
+                if (errorCode == CefErrorCode.Aborted)
+                {
+                    return;
+                }
+
+                initialLoadAction = null;
+
+                initialLoadTaskCompletionSource.TrySetResult(new LoadUrlAsyncResponse(errorCode.Value, -1));
+            }
         }
 
         partial void OnAfterBrowserCreated(IBrowser browser);
+
+        partial void SetLoadingStateChange(LoadingStateChangedEventArgs args);
 
         /// <summary>
         /// Sets the handler references to null.
@@ -357,6 +499,8 @@ namespace CefSharp.WinForms
             MenuHandler = null;
             ResourceRequestHandlerFactory = null;
             RenderProcessMessageHandler = null;
+
+            this.FreeDevToolsContext();
         }
 
         /// <summary>
@@ -390,7 +534,7 @@ namespace CefSharp.WinForms
         {
             if (IsDisposed)
             {
-                throw new ObjectDisposedException("browser", "Browser has been disposed");
+                throw new ObjectDisposedException("ChromiumWebBrowser");
             }
         }
     }

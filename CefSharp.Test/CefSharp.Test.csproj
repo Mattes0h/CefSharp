@@ -9,6 +9,7 @@
         <UseWPF>true</UseWPF>
         <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <LangVersion>8.0</LangVersion>
     </PropertyGroup>
     
     <PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
@@ -33,14 +34,19 @@
         <ProjectReference Include="..\CefSharp\CefSharp.csproj" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="chromiumembeddedframework.runtime" Version="95.7.10" />
+        <PackageReference Include="Appveyor.TestLogger" Version="2.0.0" />
+        <PackageReference Include="chromiumembeddedframework.runtime" Version="115.3.7" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.11.0" />
 
         <PackageReference Include="Moq" Version="4.13.0" />
         <PackageReference Include="Nito.AsyncEx.Context" Version="5.0.0" />
         <PackageReference Include="Nito.AsyncEx.Coordination" Version="5.0.0" />
         <PackageReference Include="xunit" Version="2.4.1" />
         <PackageReference Include="xunit.extensibility.execution" Version="2.4.1" />
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Xunit.StaFact" Version="0.3.18" />
         <PackageReference Include="Titanium.Web.Proxy" version="3.1.1301" />
     </ItemGroup>
@@ -57,5 +63,8 @@
         <Page Remove="bin.netcore\**" />
         <Page Remove="obj.netcore\**" />
     </ItemGroup>
-    <Import Project="$(SolutionDir)\CefSharp.Native.props" />
+    <ItemGroup>
+      <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+    <Import Project="$(MSBuildThisFileDirectory)..\CefSharp.Native.props" />
 </Project>

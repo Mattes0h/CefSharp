@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using System.Windows.Forms;
 using CefSharp.Example;
 using CefSharp.Example.Callback;
 using CefSharp.Example.Handlers;
+using CefSharp.WinForms.Host;
 
 namespace CefSharp.WinForms.Example
 {
@@ -63,16 +65,22 @@ namespace CefSharp.WinForms.Example
         /// Used to add a Popup browser as a Tab
         /// </summary>
         /// <param name="browserHostControl"></param>
-        public void AddTab(Control browserHostControl, string url)
+        public void AddTab(ChromiumHostControl browserHostControl, string url)
         {
             browserTabControl.SuspendLayout();
+
+            var browser = new BrowserTabUserControl(browserHostControl)
+            {
+                Dock = DockStyle.Fill,
+                Bounds = browserTabControl.Bounds
+            };
 
             var tabPage = new TabPage(url)
             {
                 Dock = DockStyle.Fill
             };
 
-            tabPage.Controls.Add(browserHostControl);
+            tabPage.Controls.Add(browser);
 
             browserTabControl.TabPages.Add(tabPage);
 
@@ -133,22 +141,18 @@ namespace CefSharp.WinForms.Example
             new AboutBox().ShowDialog();
         }
 
-        public void RemoveTab(IntPtr windowHandle)
+        public void RemoveTab(ChromiumHostControl ctrl)
         {
-            var parentControl = FromChildHandle(windowHandle);
-            if (!parentControl.IsDisposed)
+            if (!ctrl.IsDisposed)
             {
-                if (parentControl.Parent is TabPage tabPage)
-                {
-                    browserTabControl.TabPages.Remove(tabPage);
-                }
-                else if (parentControl.Parent is Panel panel)
-                {
-                    var browserTabUserControl = (BrowserTabUserControl)panel.Parent;
+                var tabPage = ctrl.GetParentOfType<TabPage>();
 
-                    var tab = (TabPage)browserTabUserControl.Parent;
-                    browserTabControl.TabPages.Remove(tab);
+                if(tabPage == null)
+                {
+                    throw new Exception("Unable to find parent TabPage");
                 }
+
+                browserTabControl.TabPages.Remove(tabPage);
             }
         }
 
@@ -310,7 +314,8 @@ namespace CefSharp.WinForms.Example
                 var isDevToolsOpen = await control.CheckIfDevToolsIsOpenAsync();
                 if (!isDevToolsOpen)
                 {
-                    if (control.Browser.LifeSpanHandler != null)
+                    var chromiumWebBrowser = control.Browser as ChromiumWebBrowser;
+                    if (chromiumWebBrowser != null && chromiumWebBrowser.LifeSpanHandler != null)
                     {
                         control.ShowDevToolsDocked();
                     }
@@ -478,7 +483,7 @@ namespace CefSharp.WinForms.Example
             var control = GetCurrentTabControl();
             if (control != null)
             {
-                control.Browser.Load("custom://cefsharp/ScriptedMethodsTest.html");
+                control.Browser.LoadUrl("custom://cefsharp/ScriptedMethodsTest.html");
             }
         }
 
@@ -545,7 +550,7 @@ namespace CefSharp.WinForms.Example
             var control = GetCurrentTabControl();
             if (control != null)
             {
-                control.Browser.Load("https://httpbin.org/");
+                control.Browser.LoadUrl("https://httpbin.org/");
             }
         }
 
@@ -554,7 +559,7 @@ namespace CefSharp.WinForms.Example
             var control = GetCurrentTabControl();
             if (control != null)
             {
-                control.Browser.GetBrowserHost().RunFileDialog(CefFileDialogMode.Open, "Open", null, new List<string> { "*.*" }, 0, new RunFileDialogCallback());
+                control.Browser.GetBrowserHost().RunFileDialog(CefFileDialogMode.Open, "Open", null, new List<string> { "*.*" }, new RunFileDialogCallback());
             }
         }
 
@@ -564,9 +569,9 @@ namespace CefSharp.WinForms.Example
             if (control != null)
             {
                 //The sample extension only works for http(s) schemes
-                if (control.Browser.Address.StartsWith("http"))
+                if (control.Browser.GetMainFrame().Url.StartsWith("http"))
                 {
-                    var requestContext = control.Browser.GetBrowserHost().RequestContext;
+                    var requestContext = control.Browser.GetRequestContext();
 
                     const string cefSharpExampleResourcesFolder =
 #if !NETCOREAPP
@@ -604,7 +609,7 @@ namespace CefSharp.WinForms.Example
                         GetActiveBrowser = (extension, isIncognito) =>
                         {
                             //Return the active browser for which the extension will act upon
-                            return control.Browser.GetBrowser();
+                            return control.Browser.BrowserCore;
                         }
                     };
 
@@ -622,7 +627,7 @@ namespace CefSharp.WinForms.Example
             var control = GetCurrentTabControl();
             if (control != null)
             {
-                control.Browser.Load(CefExample.BindingTestUrl);
+                control.Browser.LoadUrl(CefExample.BindingTestUrl);
                 control.Browser.LoadingStateChanged += (o, args) =>
                 {
                     if (args.IsLoading == false)
@@ -637,6 +642,48 @@ namespace CefSharp.WinForms.Example
                     }
                 };
             }
+        }
+
+        private void HideScrollbarsToolStripMenuItemClick(object sender, EventArgs e)
+        {
+            var control = GetCurrentTabControl();
+
+            _ = control?.HideScrollbarsAsync();
+        }
+
+        private async void TakeScreenShotMenuItemClick(object sender, EventArgs e)
+        {
+            var control = GetCurrentTabControl();
+
+            if(control == null)
+            {
+                return;
+            }
+
+            var chromiumWebBrowser = (ChromiumWebBrowser)control.Browser;
+
+            var contentSize = await chromiumWebBrowser.GetContentSizeAsync();
+
+            //Capture current scrollable area
+            var viewPort = new DevTools.Page.Viewport
+            {
+                Width = contentSize.Width,
+                Height = contentSize.Height,
+            };
+
+            var data = await chromiumWebBrowser.CaptureScreenshotAsync(viewPort: viewPort, captureBeyondViewport: true);
+
+            // Make a file to save it to (e.g. C:\Users\[user]\Desktop\CefSharp screenshot.png)
+            var screenshotPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "CefSharp screenshot" + DateTime.Now.Ticks + ".png");
+
+            File.WriteAllBytes(screenshotPath, data);
+
+            // Tell Windows to launch the saved image.
+            Process.Start(new ProcessStartInfo(screenshotPath)
+            {
+                // UseShellExecute is false by default on .NET Core.
+                UseShellExecute = true
+            });
         }
     }
 }
